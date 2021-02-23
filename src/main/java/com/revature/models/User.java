@@ -1,22 +1,42 @@
 package com.revature.models;
 
 
+
+import javax.persistence.*;
 import java.util.Objects;
 
 /**
  * Base constructs for users, store only the integer representation of roles in the db for easier role checking
- *
- *
- * @author Greg Gertsen
  */
+
+@Entity
+@Table(name="ers_users")
 public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="id")
     private int userId;
+
+    @Column(name="username",nullable = false,unique = true)
     private String username;
+
+    @Column(name="password",nullable = false)
     private String password;
+
+    @Column(name="first_name",nullable = false)
     private String firstname;
+
+    @Column(name="last_name",nullable = false)
     private String lastname;
+
+    @Column(name="email",nullable = false,unique = true)
     private String email;
+
+    @Column(name="user_role_id",nullable = false)
     private Integer userRole;
+
+
     public User() {
         super();
     }
