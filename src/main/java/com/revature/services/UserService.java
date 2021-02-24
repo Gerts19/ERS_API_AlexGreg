@@ -1,5 +1,6 @@
 package com.revature.services;
 
+import com.revature.exceptions.ResourcePersistenceException;
 import com.revature.models.Role;
 import com.revature.models.User;
 import com.revature.repositories.UserRepository;
@@ -31,7 +32,7 @@ public class UserService {
     public List<User> getAllUsers(){
         List<User> users = userRepo.getAllusers();
         if (users.isEmpty()){
-            throw new RuntimeException();
+            throw new ResourcePersistenceException("No users found");
         }
         return users;
     }
@@ -61,11 +62,11 @@ public class UserService {
         }
         Optional<User> existingUser = userRepo.getAUserByUsername(newUser.getUsername());
         if (existingUser.isPresent()) {
-            throw new RuntimeException("Username is already in use");
+            throw new ResourcePersistenceException("Username is already in use");
         }
         Optional<User> existingUserEmail = userRepo.getAUserByEmail(newUser.getEmail());
         if (existingUserEmail.isPresent()) {
-            throw new RuntimeException("Email is already in use");
+            throw new ResourcePersistenceException("Email is already in use");
         }
         newUser.setUserRole(Role.EMPLOYEE.ordinal() + 1);
         userRepo.addUser(newUser);
