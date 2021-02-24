@@ -2,7 +2,17 @@ package com.revature.repositories;
 
 import com.revature.models.User;
 import com.revature.util.ConnectionFactory;
+import org.hibernate.Criteria;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.ParameterExpression;
+import javax.persistence.criteria.Root;
 import java.sql.*;
 import java.util.*;
 
@@ -11,52 +21,96 @@ public class UserRepository {
     private String baseInsert = "INSERT INTO project_1.ers_users ";
     private String baseUpdate = "UPDATE project_1.ers_users eu ";
 
+    //---------------
+    private SessionFactory sF;
+
     public UserRepository(){
         super();
+    }
+
+    public UserRepository(SessionFactory sF){
+
+        this.sF = sF;
     }
 
     //---------------------------------- CREATE -------------------------------------------- //
 
     /**
-     * A method tho add a new user to the database, hashes passwords before inserting
+     * A method to add a new user to the database, hashes passwords before inserting
      * @param newUser the user to be added
      * @return returns true if one and only one row was inserted
      * @throws SQLException e
      */
     public boolean addUser(User newUser)  {
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseInsert +
-                         "(username, password, first_name, last_name, email, user_role_id)\n" +
-                         "VALUES(?, project_1.crypt(?, project_1.gen_salt('bf', 10)), ?, ?, ?, ?);\n";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1,newUser.getUsername());
-            ps.setString(2,newUser.getPassword());
-            ps.setString(3,newUser.getFirstname());
-            ps.setString(4,newUser.getLastname());
-            ps.setString(5,newUser.getEmail());
-            ps.setInt(6,newUser.getUserRole());
-            //get the number of affected rows
-            int rowsInserted = ps.executeUpdate();
-            return rowsInserted != 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
+
+        Session session = sF.openSession();
+        Transaction t = null;
+        Integer iD = 0;
+
+      try {
+          t = session.beginTransaction();
+          iD = (Integer) session.save(newUser);
+          t.commit();
+      } catch (Exception e) {
+          if(t!=null){
+              t.rollback();
+          }
+          e.printStackTrace();
+      }
+
+      return iD>0;
+
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseInsert +
+//                         "(username, password, first_name, last_name, email, user_role_id)\n" +
+//                         "VALUES(?, project_1.crypt(?, project_1.gen_salt('bf', 10)), ?, ?, ?, ?);\n";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//            ps.setString(1,newUser.getUsername());
+//            ps.setString(2,newUser.getPassword());
+//            ps.setString(3,newUser.getFirstname());
+//            ps.setString(4,newUser.getLastname());
+//            ps.setString(5,newUser.getEmail());
+//            ps.setInt(6,newUser.getUserRole());
+//            //get the number of affected rows
+//            int rowsInserted = ps.executeUpdate();
+//            return rowsInserted != 0;
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//        return false;
     }
 
     //---------------------------------- READ -------------------------------------------- //
 
     public List<User> getAllusers() {
+
+        Session session = sF.openSession();
+        Transaction t = null;
         List<User> users = new ArrayList<>();
-        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseQuery + " order by eu.id";
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql);
-            users = mapResultSet(rs);
+
+        try {
+            t = session.beginTransaction();
+            users = session.createQuery("FROM ers_users").list();
+            t.commit();
         } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
             e.printStackTrace();
         }
+
         return users;
+
+//        List<User> users = new ArrayList<>();
+//        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseQuery + " order by eu.id";
+//            Statement stmt = conn.createStatement();
+//            ResultSet rs = stmt.executeQuery(sql);
+//            users = mapResultSet(rs);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        return users;
     }
 
     /**
@@ -65,17 +119,31 @@ public class UserRepository {
      * @return returns an Optional user
      * @throws SQLException e
      */
+    @SuppressWarnings("unchecked")
     public Optional<User> getAUserByEmail(String email) {
+
+        Session session = sF.openSession();
+        Transaction t = null;
         Optional<User> user = Optional.empty();
-        try (Connection conn = ConnectionFactory.getInstance().getConnection()){
-            String sql = baseQuery + "WHERE email =? ";
-            PreparedStatement psmt = conn.prepareStatement(sql);
-            psmt.setString(1,email);
-            ResultSet rs = psmt.executeQuery();
-            user = mapResultSet(rs).stream().findFirst();
-        } catch (SQLException e) {
+
+        try {
+            t = session.beginTransaction();
+
+            CriteriaBuilder cB = session.getCriteriaBuilder();
+            CriteriaQuery<User> cR = cB.createQuery(User.class);
+            Root<User> root = cR.from(User.class);
+            cR.select(root).where(cB.equal(root.get("email"),email));
+            Query qu = session.createQuery(cR);
+            List<User> results = qu.getResultList();
+            user = results.stream().findFirst();
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
             e.printStackTrace();
         }
+
         return user;
     }
 
@@ -120,24 +188,43 @@ public class UserRepository {
     //---------------------------------- UPDATE -------------------------------------------- //
 
     public boolean updateAUser(User newUser) {
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseUpdate +
-                    "SET first_name=?, last_name=?, email=?, user_role_id=?, username=?, password= project_1.crypt(?, project_1.gen_salt('bf', 10))\n" +
-                    "WHERE id=?";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1,newUser.getFirstname());
-            ps.setString(2,newUser.getLastname());
-            ps.setString(3,newUser.getEmail());
-            ps.setInt(4,newUser.getUserRole());
-            ps.setString(5,newUser.getUsername());
-            ps.setString(6, newUser.getPassword());
-            ps.setInt(7,newUser.getUserId());
-            int rowsInserted = ps.executeUpdate();
-            return rowsInserted != 0;
-        } catch (SQLException e) {
+
+        Session session = sF.openSession();
+        Transaction t = null;
+        boolean success = false;
+
+        try {
+            t = session.beginTransaction();
+            session.update(newUser);
+            t.commit();
+            success = true;
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
             e.printStackTrace();
         }
-        return false;
+
+        return success;
+
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseUpdate +
+//                    "SET first_name=?, last_name=?, email=?, user_role_id=?, username=?, password= project_1.crypt(?, project_1.gen_salt('bf', 10))\n" +
+//                    "WHERE id=?";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//            ps.setString(1,newUser.getFirstname());
+//            ps.setString(2,newUser.getLastname());
+//            ps.setString(3,newUser.getEmail());
+//            ps.setInt(4,newUser.getUserRole());
+//            ps.setString(5,newUser.getUsername());
+//            ps.setString(6, newUser.getPassword());
+//            ps.setInt(7,newUser.getUserId());
+//            int rowsInserted = ps.executeUpdate();
+//            return rowsInserted != 0;
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//        return false;
     }
 
     //---------------------------------- DELETE -------------------------------------------- //
@@ -149,19 +236,38 @@ public class UserRepository {
      * @throws SQLException
      */
     public boolean deleteAUserById(Integer userId) {
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseUpdate +
-                         "SET user_role_id=4\n" +
-                         "WHERE id=? ";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setInt(1, userId);
-            //get the number of affected rows
-            int rowsInserted = ps.executeUpdate();
-            return rowsInserted != 0;
-        } catch (SQLException e) {
+
+        Session session = sF.openSession();
+        Transaction t = null;
+        boolean success = false;
+
+        try {
+            t = session.beginTransaction();
+            session.delete(userId);
+            t.commit();
+            success = true;
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
             e.printStackTrace();
         }
-        return false;
+
+        return success;
+
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseUpdate +
+//                         "SET user_role_id=4\n" +
+//                         "WHERE id=? ";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//            ps.setInt(1, userId);
+//            //get the number of affected rows
+//            int rowsInserted = ps.executeUpdate();
+//            return rowsInserted != 0;
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//        return false;
     }
 
 

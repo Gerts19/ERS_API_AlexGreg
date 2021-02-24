@@ -4,6 +4,8 @@ import com.revature.models.Reimbursement;
 import com.revature.models.ReimbursementStatus;
 import com.revature.models.ReimbursementType;
 import com.revature.models.User;
+import com.revature.repositories.UserRepository;
+import com.revature.services.UserService;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -21,9 +23,15 @@ public class Driver {
                                 .addAnnotatedClass(User.class)
                                 .addAnnotatedClass(Reimbursement.class).buildSessionFactory();
 
-      Session session = sF.openSession();
+      UserRepository userRepo = new UserRepository(sF);
+      UserService userServ = new UserService(userRepo);
 
-      Transaction t = null;
+      if(userServ.isEmailAvailable("alex10@gmail.com")){
+      System.out.println("email is available");
+      }
+      else{
+      System.out.println("Success");
+      }
 
 //      try {
 //          t = session.beginTransaction();
@@ -40,20 +48,21 @@ public class Driver {
 //          e.printStackTrace();
 //      }
 
-      try {
-          t = session.beginTransaction();
-          Reimbursement r = new Reimbursement(123.45, "Big lunch",
-                                            1, ReimbursementStatus.getByNumber(2),ReimbursementType.getByNumber(3));
+//      try {
+//          t = session.beginTransaction();
+//          Reimbursement r = new Reimbursement(123.45, "Big lunch",
+//                                            1, ReimbursementStatus.getByNumber(2),ReimbursementType.getByNumber(3));
+//
+//          r.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
+//          r.setId((int) session.save(r));
+//          t.commit();
+//      } catch (Exception e) {
+//          if(t!=null){
+//              t.rollback();
+//          }
+//          e.printStackTrace();
+//      }
 
-          r.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
-          r.setId((int) session.save(r));
-          t.commit();
-      } catch (Exception e) {
-          if(t!=null){
-              t.rollback();
-          }
-          e.printStackTrace();
-      }
 
 
   }
