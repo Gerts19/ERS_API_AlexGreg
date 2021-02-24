@@ -4,8 +4,13 @@ import com.revature.dtos.RbDTO;
 import com.revature.models.Reimbursement;
 import com.revature.models.ReimbursementStatus;
 import com.revature.models.ReimbursementType;
+import com.revature.models.User;
 import com.revature.util.ConnectionFactory;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 
+import javax.persistence.Query;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -30,10 +35,18 @@ public class ReimbursementsRepository {
             "on er.resolver_id = resolver.id ";
     private String baseInsert = "INSERT INTO project_1.ers_reimbursements ";
     private String baseUpdate = "UPDATE project_1.ers_reimbursements er ";
+    private SessionFactory sF;
 
     public ReimbursementsRepository(){
         super();
     }
+
+    public ReimbursementsRepository(SessionFactory sF){
+
+        this.sF = sF;
+    }
+
+
 
     //---------------------------------- CREATE -------------------------------------------- //
     /**
@@ -44,41 +57,96 @@ public class ReimbursementsRepository {
      */
     // TODO add support to persist receipt images to data source
     public boolean addReimbursement(Reimbursement reimbursement) {
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseInsert +
-                    "(amount, description, author_id, " +
-                    "reimbursement_status_id, reimbursement_type_id)\n" +
-                    "VALUES(?, ?, ?, 1, ?);\n";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setDouble(1,reimbursement.getAmount());
-            ps.setString(2,reimbursement.getDescription());
-            ps.setInt(3,reimbursement.getAuthorId());
-            //Reimbursements are submitted with PENDING  status by Default!
-            ps.setInt(4,reimbursement.getReimbursementType().ordinal() + 1);
-            //get the number of affected rows
-            int rowsInserted = ps.executeUpdate();
-            return rowsInserted != 0;
-        } catch (SQLException e) {
+
+        Session session = sF.openSession();
+        Transaction t = null;
+        Integer iD = 0;
+
+        try {
+            t = session.beginTransaction();
+            iD = (Integer) session.save(reimbursement);
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
             e.printStackTrace();
         }
-        return false;
+
+        return iD>0;
+
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseInsert +
+//                    "(amount, description, author_id, " +
+//                    "reimbursement_status_id, reimbursement_type_id)\n" +
+//                    "VALUES(?, ?, ?, 1, ?);\n";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//            ps.setDouble(1,reimbursement.getAmount());
+//            ps.setString(2,reimbursement.getDescription());
+//            ps.setInt(3,reimbursement.getAuthorId());
+//            //Reimbursements are submitted with PENDING  status by Default!
+//            ps.setInt(4,reimbursement.getReimbursementType().ordinal() + 1);
+//            //get the number of affected rows
+//            int rowsInserted = ps.executeUpdate();
+//            return rowsInserted != 0;
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//        return false;
     }
 
     //---------------------------------- READ -------------------------------------------- //
 
     public List<RbDTO> getAllReimbursements() {
-        List<RbDTO> reimbursements = new ArrayList<>();
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseQuery + " order by er.id";
-            PreparedStatement ps = conn.prepareStatement(sql);
 
-            ResultSet rs = ps.executeQuery();
 
-            reimbursements = mapResultSetDTO(rs);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return reimbursements;
+        Session session = sF.openSession();
+        Transaction t = null;
+        List<RbDTO> users = new ArrayList<>();
+        Query qry= session.createQuery("select u.first_name, i.author_id from ers_users u "
+                + "left join u.id ers_reimbursements i");
+        List l = qry.getResultList();
+
+        return l;
+
+        //Iterator it=l.iterator();
+//        while(it.hasNext())
+//        {
+//            Object rows[] = (Object[])it.next();
+//            System.out.println(rows[0]+ " -- " +rows[1] + "--"+rows[2]+"--"+rows[3]);
+//        }
+        //session.clear();
+        //session.close();
+
+//        Session session = sF.openSession();
+//        Transaction t = null;
+//        List<User> users = new ArrayList<>();
+//
+//        try {
+//            t = session.beginTransaction();
+//            users = session.createQuery("FROM ers_users").list();
+//            t.commit();
+//        } catch (Exception e) {
+//            if(t!=null){
+//                t.rollback();
+//            }
+//            e.printStackTrace();
+//        }
+//
+//        return users;
+
+//        List<RbDTO> reimbursements = new ArrayList<>();
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseQuery + " order by er.id";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//
+//            ResultSet rs = ps.executeQuery();
+//
+//            reimbursements = mapResultSetDTO(rs);
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//        return reimbursements;
     }
 
     public List<RbDTO> getAllReimbSetByStatus(Integer statusId) {
@@ -260,22 +328,43 @@ public class ReimbursementsRepository {
 
     //---------------------------------- UPDATE -------------------------------------------- //
     public boolean updateEMP(Reimbursement reimb) {
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseUpdate +
-                    "SET amount=?, description=?, reimbursement_type_id=?\n" +
-                    "WHERE id=?\n";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setDouble(1, reimb.getAmount());
-            ps.setString(2, reimb.getDescription());
-            ps.setInt(3,reimb.getReimbursementType().ordinal() + 1);
-            ps.setInt(4,reimb.getId());
-            //get the number of affected rows
-            int rowsInserted = ps.executeUpdate();
-            return rowsInserted != 0;
-        } catch (SQLException e) {
+
+        Session session = sF.openSession();
+        Transaction t = null;
+
+        boolean success = false;
+
+        try {
+            t = session.beginTransaction();
+            session.update(reimb);
+            t.commit();
+            success = true;
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
             e.printStackTrace();
         }
-        return false;
+
+        return success;
+
+
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseUpdate +
+//                    "SET amount=?, description=?, reimbursement_type_id=?\n" +
+//                    "WHERE id=?\n";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//            ps.setDouble(1, reimb.getAmount());
+//            ps.setString(2, reimb.getDescription());
+//            ps.setInt(3,reimb.getReimbursementType().ordinal() + 1);
+//            ps.setInt(4,reimb.getId());
+//            //get the number of affected rows
+//            int rowsInserted = ps.executeUpdate();
+//            return rowsInserted != 0;
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//        return false;
     }
 
     public boolean updateFIN(Integer resolverId, Integer statusId, Integer reimbId) {
@@ -393,15 +482,34 @@ public class ReimbursementsRepository {
      * @throws SQLException e
      */
     public boolean delete(Integer reimbId) throws SQLException {
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = "DELETE FROM project_1.ers_reimbursements\n" +
-                         "WHERE id=? ";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setInt(1,reimbId);
-            //get the number of affected rows
-            int rowsInserted = ps.executeUpdate();
-            return rowsInserted != 0;
+
+        Session session = sF.openSession();
+        Transaction t = null;
+        boolean success = false;
+
+        try {
+            t = session.beginTransaction();
+            session.delete(reimbId);
+            t.commit();
+            success = true;
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
+            e.printStackTrace();
         }
+
+        return success;
+
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = "DELETE FROM project_1.ers_reimbursements\n" +
+//                         "WHERE id=? ";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//            ps.setInt(1,reimbId);
+//            //get the number of affected rows
+//            int rowsInserted = ps.executeUpdate();
+//            return rowsInserted != 0;
+ //       }
     }
 
     //---------------------------------- UTIL -------------------------------------------- //

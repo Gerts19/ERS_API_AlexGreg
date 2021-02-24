@@ -9,10 +9,7 @@ import org.hibernate.Transaction;
 
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.ParameterExpression;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
 import java.sql.*;
 import java.util.*;
 
@@ -148,18 +145,43 @@ public class UserRepository {
     }
 
     public Optional<User> getAUserByUsername(String userName) {
+
+        Session session = sF.openSession();
+        Transaction t = null;
         Optional<User> user = Optional.empty();
-        try (Connection conn = ConnectionFactory.getInstance().getConnection()){
-            String sql = baseQuery + "WHERE username = ?";
-            PreparedStatement psmt = conn.prepareStatement(sql);
-            psmt.setString(1,userName);
-            ResultSet rs = psmt.executeQuery();
-            user = mapResultSet(rs).stream().findFirst();
-        } catch (SQLException sqle) {
-            sqle.printStackTrace();
+
+        try {
+
+            t = session.beginTransaction();
+            CriteriaBuilder cB = session.getCriteriaBuilder();
+            CriteriaQuery<User> cR = cB.createQuery(User.class);
+            Root<User> root = cR.from(User.class);
+            cR.select(root).where(cB.equal(root.get("username"),userName));
+            Query qu = session.createQuery(cR);
+            List<User> results = qu.getResultList();
+            user = results.stream().findFirst();
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
+            e.printStackTrace();
         }
-        System.out.println(user);
+
         return user;
+
+//        Optional<User> user = Optional.empty();
+//        try (Connection conn = ConnectionFactory.getInstance().getConnection()){
+//            String sql = baseQuery + "WHERE username = ?";
+//            PreparedStatement psmt = conn.prepareStatement(sql);
+//            psmt.setString(1,userName);
+//            ResultSet rs = psmt.executeQuery();
+//            user = mapResultSet(rs).stream().findFirst();
+//        } catch (SQLException sqle) {
+//            sqle.printStackTrace();
+//        }
+//        System.out.println(user);
+//        return user;
     }
 
     /**
@@ -170,19 +192,46 @@ public class UserRepository {
      * @throws SQLException e
      */
     public Optional<User> getAUserByUsernameAndPassword(String userName, String password) {
+
+        Session session = sF.openSession();
+        Transaction t = null;
         Optional<User> user = Optional.empty();
-        try (Connection conn = ConnectionFactory.getInstance().getConnection()){
-            String sql = baseQuery + "WHERE username = ? AND  password = project_1.crypt(?, password)";
-            PreparedStatement psmt = conn.prepareStatement(sql);
-            psmt.setString(1,userName);
-            psmt.setString(2,password);
-            ResultSet rs = psmt.executeQuery();
-            user = mapResultSet(rs).stream().findFirst();
-        } catch (SQLException sqle) {
-            sqle.printStackTrace();
+
+        try {
+            t = session.beginTransaction();
+
+            CriteriaBuilder cB = session.getCriteriaBuilder();
+            CriteriaQuery<User> cR = cB.createQuery(User.class);
+            Root<User> root = cR.from(User.class);
+            Predicate pred = cB.equal(root.get("username"),userName);
+            Predicate pred2 = cB.equal(root.get("password"),password);
+
+            cR.select(root).where(cB.and(pred,pred2));
+            Query qu = session.createQuery(cR);
+            List<User> results = qu.getResultList();
+            user = results.stream().findFirst();
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
+            e.printStackTrace();
         }
-        System.out.println(user);
+
         return user;
+//        Optional<User> user = Optional.empty();
+//        try (Connection conn = ConnectionFactory.getInstance().getConnection()){
+//            String sql = baseQuery + "WHERE username = ? AND  password = project_1.crypt(?, password)";
+//            PreparedStatement psmt = conn.prepareStatement(sql);
+//            psmt.setString(1,userName);
+//            psmt.setString(2,password);
+//            ResultSet rs = psmt.executeQuery();
+//            user = mapResultSet(rs).stream().findFirst();
+//        } catch (SQLException sqle) {
+//            sqle.printStackTrace();
+//        }
+//        System.out.println(user);
+//        return user;
     }
 
     //---------------------------------- UPDATE -------------------------------------------- //

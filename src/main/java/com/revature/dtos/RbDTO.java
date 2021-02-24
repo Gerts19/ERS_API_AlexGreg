@@ -1,20 +1,49 @@
 package com.revature.dtos;
 
+import com.revature.models.User;
+
+import javax.persistence.*;
 import java.sql.Blob;
 import java.util.Objects;
 /**
  * A DTO to facilitate easy transferring reimbursements
  */
+@Entity
+@Table(name = "ers_reimbursements")
+@SecondaryTable(name = "ers_users")
 public class RbDTO {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="id")
     private Integer id;
+
+    @Column(name="amount",nullable = false)
     private Double amount;
+
+    @Column(name="submitted",nullable = false)
     private String submitted;
+
+    @Column(name="resolved",nullable = true)
     private String resolved;
+
+    @Column(name="reciept")
     private Blob image;
+
+
+    //This is two values from the ers_user table
+    @OneToMany(targetEntity = User.class, cascade = CascadeType.ALL)
+    @JoinColumn(name = "firstName",referencedColumnName="first_name")
     private String authorName;
+
+
     private String resolverName;
+
     private String status;
+
     private String type;
+
+    @Column(name="description",nullable = true)
     private String description;
 
     public RbDTO() {

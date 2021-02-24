@@ -1,10 +1,13 @@
 package com.revature;
 
+import com.revature.dtos.RbDTO;
 import com.revature.models.Reimbursement;
 import com.revature.models.ReimbursementStatus;
 import com.revature.models.ReimbursementType;
 import com.revature.models.User;
+import com.revature.repositories.ReimbursementsRepository;
 import com.revature.repositories.UserRepository;
+import com.revature.services.ReimbursementService;
 import com.revature.services.UserService;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -13,6 +16,7 @@ import org.hibernate.cfg.Configuration;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class Driver {
 
@@ -26,12 +30,34 @@ public class Driver {
       UserRepository userRepo = new UserRepository(sF);
       UserService userServ = new UserService(userRepo);
 
-      if(userServ.isEmailAvailable("alex10@gmail.com")){
-      System.out.println("email is available");
+
+      ReimbursementsRepository rR = new ReimbursementsRepository(sF);
+      ReimbursementService rS = new ReimbursementService(rR);
+
+      List<RbDTO> allReimb =  rS.getAllReimb();
+
+      for(RbDTO r: allReimb){
+
+      System.out.println(r.toString());
       }
-      else{
-      System.out.println("Success");
-      }
+
+//      if(userServ.isUsernameAvailable("alex10")){
+//          System.out.println("username is available");
+//      }
+//      else{
+//      System.out.println("Success");
+//      }
+
+
+//        User u = userServ.authenticate("alex10","pass");
+//        System.out.println(u.toString());
+
+//      if(userServ.isEmailAvailable("alex10@gmail.com")){
+//      System.out.println("email is available");
+//      }
+//      else{
+//      System.out.println("Success");
+//      }
 
 //      try {
 //          t = session.beginTransaction();

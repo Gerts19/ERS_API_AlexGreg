@@ -10,8 +10,14 @@ import java.util.List;
  * Service layer for validating reimbursements before sending to or from the Database
  */
 public class ReimbursementService {
-    private final ReimbursementsRepository reimbRepo = new ReimbursementsRepository();
+    private final ReimbursementsRepository reimbRepo;
 
+
+
+    public ReimbursementService(ReimbursementsRepository rR){
+
+        reimbRepo = rR;
+    }
     /**
      * Gets all Reimbursements from the DataBase
      * @return A list of RbDTO objects
