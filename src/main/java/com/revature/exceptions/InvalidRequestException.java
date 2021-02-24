@@ -10,6 +10,4 @@ public class InvalidRequestException extends RuntimeException {
         super(message);
     }
 
-
-
 }
