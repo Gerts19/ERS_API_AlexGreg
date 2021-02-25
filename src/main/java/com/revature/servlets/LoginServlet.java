@@ -64,6 +64,8 @@ public class LoginServlet extends HttpServlet {
             session.setAttribute("role", user.getUserRole());
 
             out.println("<p>Welcome " + session.getAttribute("name"));
+
+
         }
         else{
             out.println("<p>Login failed</p>");
