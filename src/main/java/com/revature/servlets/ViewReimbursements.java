@@ -95,6 +95,9 @@ public class ViewReimbursements extends HttpServlet {
                 for (Reimbursement r : reimbursements) {
                     writer.write(r.toString());
                 }
+
+            default:
+                resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
     }
 }

@@ -31,43 +31,34 @@ public class LoginServlet extends HttpServlet {
 
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
 
-//        resp.setContentType("text/html");
-//        PrintWriter out = resp.getWriter();
-//        out.println("<p>Hello World!</p>");
+
         resp.setContentType("text/html;charset=UTF-8");
         PrintWriter out = resp.getWriter();
         String username = req.getParameter("user");
         String password = req.getParameter("pass");
 
-
-//        SessionFactory sF = new Configuration()
-//                .addAnnotatedClass(User.class)
-//                .addAnnotatedClass(Reimbursement.class).buildSessionFactory();
-//
-//
-//        UserRepository userRepo = new UserRepository(sF);
-//        UserService userServ = new UserService(userRepo);
-//        ReimbursementsRepository rR = new ReimbursementsRepository(sF);
-//        ReimbursementService rS = new ReimbursementService(rR);
-
         out.println("<p>" + username + " " + password + "</p>");
-
         User user = ServiceUtil.getUserService().authenticate(username, password);
 
         if(user != null){
             out.println("<p>Login successful</p>");
             HttpSession session = req.getSession();
+            //Can we save the whole user
+            session.setAttribute("user", user);
+
             session.setAttribute("user_id", user.getUserId());
             session.setAttribute("username", user.getUsername());
             session.setAttribute("name", user.getFirstname() + " " + user.getLastname());
             session.setAttribute("email", user.getEmail());
             session.setAttribute("role", user.getUserRole());
 
+            resp.setStatus(HttpServletResponse.SC_OK);
             out.println("<p>Welcome " + session.getAttribute("name"));
 
 
         }
         else{
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.println("<p>Login failed</p>");
         }
 

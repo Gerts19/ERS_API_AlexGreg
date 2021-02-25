@@ -69,6 +69,15 @@ public class Reimbursement {
         this.reimbursementType = reimbursementType;
     }
 
+    public Reimbursement(Reimbursement reimb){
+
+        this.amount = reimb.getAmount();
+        this.description = reimb.getDescription();
+        this.authorId = reimb.getAuthorId();
+        this.reimbursementStatus = ReimbursementStatus.PENDING;
+        this.reimbursementType = reimb.getReimbursementType();
+    }
+
     public Reimbursement(Integer id, Double amount, Timestamp submitted,
                          Timestamp resolved, String description, int authorId, int resolverId,
                          ReimbursementStatus reimbursementStatus, ReimbursementType reimbursementType) {

@@ -36,6 +36,14 @@ public class UserService {
         return users;
     }
 
+    /*
+    Added for servlet functionality
+     */
+    public Optional<User> getUserByUserName(String userName){
+
+        return userRepo.getAUserByUsername(userName);
+    }
+
     /**
      * Authentication method used by the authentication servlet
      * @param username username of the user
