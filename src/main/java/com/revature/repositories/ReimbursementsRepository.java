@@ -4,7 +4,6 @@ import com.revature.dtos.RbDTO;
 import com.revature.models.Reimbursement;
 import com.revature.models.ReimbursementStatus;
 import com.revature.models.ReimbursementType;
-import com.revature.models.User;
 import com.revature.util.ConnectionFactory;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -367,18 +366,47 @@ public class ReimbursementsRepository {
      * @return a set of reimbursements mapped by the MapResultSet method
      * @throws SQLException e
      */
-    public List<RbDTO> getAllReimbSetByAuthorIdAndType(Integer authorId, ReimbursementType reType) throws SQLException {
-        List<RbDTO> reimbursements = new ArrayList<>();
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseQuery + "WHERE er.author_id=? AND er.reimbursement_type_id=? order by er.id";
-            PreparedStatement ps = conn.prepareStatement(sql);
+    @SuppressWarnings("unchecked")
+    public List<Reimbursement> getAllReimbSetByAuthorIdAndType(Integer authorId, ReimbursementType reType) throws SQLException {
 
-            ps.setInt(1,authorId);
-            ps.setInt(2,reType.ordinal() + 1);
-            ResultSet rs = ps.executeQuery();
-            reimbursements = mapResultSetDTO(rs);
+        Session session = sF.openSession();
+        Transaction t = null;
+        List<Reimbursement> reimbs = new ArrayList<>();
+
+        try {
+            t = session.beginTransaction();
+
+            CriteriaBuilder cB = session.getCriteriaBuilder();
+            CriteriaQuery<Reimbursement> cR = cB.createQuery(Reimbursement.class);
+            Root<Reimbursement> root = cR.from(Reimbursement.class);
+            Predicate pred = cB.equal(root.get("authorId"),authorId);
+            Predicate pred2 = cB.equal(root.get("reimbursementType"),reType);
+
+            cR.select(root).where(cB.and(pred,pred2));
+            Query qu = session.createQuery(cR);
+            reimbs = qu.getResultList();
+
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
+            e.printStackTrace();
         }
-        return reimbursements;
+
+        return reimbs;
+
+//        List<RbDTO> reimbursements = new ArrayList<>();
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseQuery + "WHERE er.author_id=? AND er.reimbursement_type_id=? order by er.id";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//
+//            ps.setInt(1,authorId);
+//            ps.setInt(2,reType.ordinal() + 1);
+//            ResultSet rs = ps.executeQuery();
+//            reimbursements = mapResultSetDTO(rs);
+//        }
+//        return reimbursements;
     }
 
     //Refactored
@@ -426,19 +454,47 @@ public class ReimbursementsRepository {
      * @return a set of reimbursements mapped by the MapResultSet method
      * @throws SQLException e
      */
-    public List<RbDTO> getAllReimbSetByResolverId(Integer resolverId) throws SQLException {
-        List<RbDTO> reimbursements = new ArrayList<>();
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseQuery + "WHERE er.resolver_id=? order by er.id";
-            PreparedStatement ps = conn.prepareStatement(sql);
+    @SuppressWarnings("unchecked")
+    public List<Reimbursement> getAllReimbSetByResolverId(Integer resolverId) throws SQLException {
 
-            ps.setInt(1,resolverId);
+        Session session = sF.openSession();
+        Transaction t = null;
+        List<Reimbursement> reimbs = new ArrayList<>();
 
-            ResultSet rs = ps.executeQuery();
+        try {
+            t = session.beginTransaction();
 
-            reimbursements = mapResultSetDTO(rs);
+            CriteriaBuilder cB = session.getCriteriaBuilder();
+            CriteriaQuery<Reimbursement> cR = cB.createQuery(Reimbursement.class);
+            Root<Reimbursement> root = cR.from(Reimbursement.class);
+            cR.select(root).where(cB.equal(root.get("resolverId"), resolverId));
+            Query qu = session.createQuery(cR);
+            reimbs = qu.getResultList();
+
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
+            e.printStackTrace();
         }
-        return reimbursements;
+
+        return reimbs;
+
+
+
+//        List<RbDTO> reimbursements = new ArrayList<>();
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseQuery + "WHERE er.resolver_id=? order by er.id";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//
+//            ps.setInt(1,resolverId);
+//
+//            ResultSet rs = ps.executeQuery();
+//
+//            reimbursements = mapResultSetDTO(rs);
+//        }
+//        return reimbursements;
     }
 
     /**
@@ -448,18 +504,47 @@ public class ReimbursementsRepository {
      * @return a set of reimbursements mapped by the MapResultSet method
      * @throws SQLException e
      */
-    public List<RbDTO> getAllReimbSetByResolverIdAndStatus(Integer resolverId, ReimbursementStatus reStat) throws SQLException {
-        List<RbDTO> reimbursements = new ArrayList<>();
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseQuery + "WHERE er.resolver_id=? AND er.reimbursement_status_id=? order by er.id";
-            PreparedStatement ps = conn.prepareStatement(sql);
+    public List<Reimbursement> getAllReimbSetByResolverIdAndStatus(Integer resolverId, ReimbursementStatus reStat) throws SQLException {
 
-            ps.setInt(1,resolverId);
-            ps.setInt(2,reStat.ordinal() + 1);
-            ResultSet rs = ps.executeQuery();
-            reimbursements = mapResultSetDTO(rs);
+
+        Session session = sF.openSession();
+        Transaction t = null;
+        List<Reimbursement> reimbs = new ArrayList<>();
+
+        try {
+            t = session.beginTransaction();
+
+            CriteriaBuilder cB = session.getCriteriaBuilder();
+            CriteriaQuery<Reimbursement> cR = cB.createQuery(Reimbursement.class);
+            Root<Reimbursement> root = cR.from(Reimbursement.class);
+            Predicate pred = cB.equal(root.get("resolverId"),resolverId);
+            Predicate pred2 = cB.equal(root.get("reimbursementStatus"),reStat);
+
+            cR.select(root).where(cB.and(pred,pred2));
+            Query qu = session.createQuery(cR);
+            reimbs = qu.getResultList();
+
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
+            e.printStackTrace();
         }
-        return reimbursements;
+
+        return reimbs;
+
+//        List<RbDTO> reimbursements = new ArrayList<>();
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseQuery + "WHERE er.resolver_id=? AND er.reimbursement_status_id=? order by er.id";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//
+//            ps.setInt(1,resolverId);
+//            ps.setInt(2,reStat.ordinal() + 1);
+//            ResultSet rs = ps.executeQuery();
+//            reimbursements = mapResultSetDTO(rs);
+//        }
+//        return reimbursements;
     }
 
     /**
@@ -469,18 +554,46 @@ public class ReimbursementsRepository {
      * @return a set of reimbursements mapped by the MapResultSet method
      * @throws SQLException e
      */
-    public List<RbDTO> getAllReimbSetByResolverIdAndType(Integer resolverId, ReimbursementType reType) throws SQLException {
-        List<RbDTO> reimbursements = new ArrayList<>();
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseQuery + "WHERE er.resolver_id=? AND er.reimbursement_type_id=? order by er.id";
-            PreparedStatement ps = conn.prepareStatement(sql);
+    public List<Reimbursement> getAllReimbSetByResolverIdAndType(Integer resolverId, ReimbursementType reType) throws SQLException {
 
-            ps.setInt(1,resolverId);
-            ps.setInt(2,reType.ordinal() + 1);
-            ResultSet rs = ps.executeQuery();
-            reimbursements = mapResultSetDTO(rs);
+        Session session = sF.openSession();
+        Transaction t = null;
+        List<Reimbursement> reimbs = new ArrayList<>();
+
+        try {
+            t = session.beginTransaction();
+
+            CriteriaBuilder cB = session.getCriteriaBuilder();
+            CriteriaQuery<Reimbursement> cR = cB.createQuery(Reimbursement.class);
+            Root<Reimbursement> root = cR.from(Reimbursement.class);
+            Predicate pred = cB.equal(root.get("resolverId"),resolverId);
+            Predicate pred2 = cB.equal(root.get("reimbursementType"),reType);
+
+            cR.select(root).where(cB.and(pred,pred2));
+            Query qu = session.createQuery(cR);
+            reimbs = qu.getResultList();
+
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
+            e.printStackTrace();
         }
-        return reimbursements;
+
+        return reimbs;
+
+//        List<RbDTO> reimbursements = new ArrayList<>();
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseQuery + "WHERE er.resolver_id=? AND er.reimbursement_type_id=? order by er.id";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//
+//            ps.setInt(1,resolverId);
+//            ps.setInt(2,reType.ordinal() + 1);
+//            ResultSet rs = ps.executeQuery();
+//            reimbursements = mapResultSetDTO(rs);
+//        }
+//        return reimbursements;
     }
 
     //---------------------------------- UPDATE -------------------------------------------- //
