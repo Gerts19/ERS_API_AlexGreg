@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+import java.util.Set;
 
 @WebServlet(name="ViewReimbursements", urlPatterns = "/view")
 public class ViewReimbursements extends HttpServlet {
@@ -35,29 +35,55 @@ public class ViewReimbursements extends HttpServlet {
                 // TODO
                 // Figure out how to use query params without having to use all 3 or any at all.
                 String filter = "";
+                int status;
+                int type;
 
-                filter = req.getParameter("filter");
-                int status = Integer.parseInt(req.getParameter("status_id"));
-                int type = Integer.parseInt(req.getParameter("type_id"));
+                Set<String> parameterNames = req.getParameterMap().keySet();
+
+                if (parameterNames.contains("filter")) {
+                    filter = req.getParameter("filter");
+                }
+
+                if (parameterNames.contains("status_id")) {
+                    status = Integer.parseInt(req.getParameter("status_id"));
+                }
+
+                if (parameterNames.contains("type_id")) {
+                    type = Integer.parseInt(req.getParameter("type_id"));
+                }
 
                 List<Reimbursement> reimbursements;
 
-                if (filter.toLowerCase().equals("status")) {
-                    writer.write("Did I get here?");
-
-                    //Status id = 4 is not showing the Reimbursement?
-                    reimbursements = ServiceUtil.getReimbService().getReimbByStatus(status);
-                } else if (filter.toLowerCase().equals("type")) {
-                    writer.write("Did I get here?");
-                    reimbursements = ServiceUtil.getReimbService().getReimbByType(type);
-                } else {
-                    writer.write("Did I get here?");
-                    reimbursements = ServiceUtil.getReimbService().getAllReimb();
+                switch (filter.toLowerCase()) {
+                    case "status":
+                        status = Integer.parseInt(req.getParameter("status_id"));
+                        writer.write("<p> status is: " + status + "</p>");
+                        reimbursements = ServiceUtil.getReimbService().getReimbByStatus(status);
+                        break;
+                    case "type":
+                        type = Integer.parseInt(req.getParameter("type_id"));
+                        writer.write(("<p> type is: " + type + "</p>"));
+                        reimbursements = ServiceUtil.getReimbService().getReimbByStatus(type);
+                        break;
+                    default:
+                        reimbursements = ServiceUtil.getReimbService().getAllReimb();
                 }
 
-                writer.write("<p>All Reimbursements. . .</p>");
+//                if (filter.toLowerCase().equals("status")) {
+//                    writer.write("Did I get here?");
+//
+//                    //Status id = 4 is not showing the Reimbursement?
+//                    reimbursements = ServiceUtil.getReimbService().getReimbByStatus(status);
+//                } else if (filter.toLowerCase().equals("type")) {
+//                    writer.write("Did I get here?");
+//                    reimbursements = ServiceUtil.getReimbService().getReimbByType(type);
+//                } else {
+//                    writer.write("Did I get here?");
+//                    reimbursements = ServiceUtil.getReimbService().getAllReimb();
+//                }
+
                 for (Reimbursement r : reimbursements) {
-                    writer.write(r.toString());
+                    writer.write("\n" + r.toString());
                 }
                 break;
             case 3:
