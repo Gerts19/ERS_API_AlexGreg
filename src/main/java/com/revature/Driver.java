@@ -37,6 +37,18 @@ public class Driver {
       ReimbursementService rS = new ReimbursementService(rR);
 
 
+
+
+//        rS.approve(1,1);
+//        rS.deny(1,2);
+
+      Reimbursement r = new Reimbursement(123.45, "Big Dinner",
+                                            1, ReimbursementStatus.getByNumber(4),ReimbursementType.getByNumber(3));
+
+      r.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
+      r.setId(1);
+      rS.updateEMP(r);
+
       //getAReimbByReimbId
 
 
