@@ -87,7 +87,7 @@ public class UserRepository {
 
         try {
             t = session.beginTransaction();
-            users = session.createQuery("FROM ers_users").list();
+            users = session.createQuery("FROM User").list();
             t.commit();
         } catch (Exception e) {
             if(t!=null){

@@ -37,17 +37,21 @@ public class Driver {
 //      User user = new User("greg10", "pass", "Greg", "Gertson", "greg10@gmail.com");
 //      userServ.register(user);
 
-//      User newUser = new User("alex10", "pass", "Alex",
-//                                    "Googe","alex10@gmail.com");
-//      newUser.setUserId(2);
-//      newUser.setUserRole(2);
-//      userServ.update(newUser);
+//      User newUser = new User("admin", "admin", "Admin",
+//                                    "User","admin@gmail.com");
+//      newUser.setUserRole(1);
+//      userRepo.addUser(newUser);
 
-      Reimbursement r = new Reimbursement(45.54, "Big Greg Breakfast2",
-                                            3, ReimbursementStatus.getByNumber(1),ReimbursementType.getByNumber(3));
+      List<User> users = userServ.getAllUsers();
+      for (User u : users)
+          System.out.println(u.toString());
 
-      r.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
-      rS.save(r);
+
+//      Reimbursement r = new Reimbursement(45.54, "Big Greg Breakfast2",
+//                                            3, ReimbursementStatus.getByNumber(1),ReimbursementType.getByNumber(3));
+//
+//      r.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
+//      rS.save(r);
 
 //      Reimbursement r1 = new Reimbursement(543.21, "Big Alex Breakfast",
 //              2, ReimbursementStatus.getByNumber(1),ReimbursementType.getByNumber(3));

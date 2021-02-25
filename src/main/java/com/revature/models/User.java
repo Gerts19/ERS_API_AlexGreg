@@ -59,6 +59,15 @@ public class User {
         this.userRole = userRole;
     }
 
+    public User(User user) {
+        this.username = user.getUsername();
+        this.password = user.getPassword();
+        this.firstname = user.getFirstname();
+        this.lastname = user.getLastname();
+        this.email = user.getEmail();
+        this.userRole = user.getUserRole();
+    }
+
     public int getUserId() {
         return userId;
     }

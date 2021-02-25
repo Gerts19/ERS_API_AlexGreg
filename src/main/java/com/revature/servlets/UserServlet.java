@@ -33,11 +33,12 @@ public class UserServlet extends HttpServlet {
                 writer.write("<p>Confirmed: " + role_id + "</p>");
                 List<User> users = ServiceUtil.getUserService().getAllUsers();
                 for (User u : users) {
-                    writer.write("\n" + u.toString());
+                    writer.write(u.toString());
                 }
                 break;
 
             default:
+                resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 writer.write("<p> " + role_id + " : does not have permission </p>");
         }
 
@@ -55,8 +56,12 @@ public class UserServlet extends HttpServlet {
         if(role_id==1){
 
             //Test1 - pass JSON from post request
-            User newUser = objectMapper.readValue(req.getInputStream(),User.class);
+            User newUser = new User(objectMapper.readValue(req.getInputStream(),User.class));
+
+            writer.write(newUser.toString());
+
             ServiceUtil.getUserService().register(newUser);
+            resp.setStatus(HttpServletResponse.SC_CREATED);
             writer.write("<p> Added user: "+ newUser.toString() +" </p>");
 
 
