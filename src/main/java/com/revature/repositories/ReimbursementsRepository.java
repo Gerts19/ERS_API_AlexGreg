@@ -11,6 +11,11 @@ import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 
 import javax.persistence.Query;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import javax.print.attribute.standard.RequestingUserName;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -56,6 +61,7 @@ public class ReimbursementsRepository {
      * @throws IOException e
      */
     // TODO add support to persist receipt images to data source
+    //Refactored*******
     public boolean addReimbursement(Reimbursement reimbursement) {
 
         Session session = sF.openSession();
@@ -97,18 +103,27 @@ public class ReimbursementsRepository {
 
     //---------------------------------- READ -------------------------------------------- //
 
-    public List<RbDTO> getAllReimbursements() {
+    //Refactored*******
+    @SuppressWarnings("unchecked")
+    public List<Reimbursement> getAllReimbursements() {
 
 
         Session session = sF.openSession();
         Transaction t = null;
-        List<RbDTO> users = new ArrayList<>();
-        Query qry= session.createQuery("select u.first_name, i.author_id from ers_users u "
-                + "left join u.id ers_reimbursements i");
-        List l = qry.getResultList();
+        List<Reimbursement> reimbs = new ArrayList<>();
 
-        return l;
+        try {
+            t = session.beginTransaction();
+            reimbs = session.createQuery("FROM Reimbursement").list();
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
+            e.printStackTrace();
+        }
 
+        return reimbs;
         //Iterator it=l.iterator();
 //        while(it.hasNext())
 //        {
@@ -149,18 +164,46 @@ public class ReimbursementsRepository {
 //        return reimbursements;
     }
 
-    public List<RbDTO> getAllReimbSetByStatus(Integer statusId) {
-        List<RbDTO> reimbursements = new ArrayList<>();
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseQuery + "WHERE er.reimbursement_status_id=? order by er.id";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setInt(1,statusId);
-            ResultSet rs = ps.executeQuery();
-            reimbursements = mapResultSetDTO(rs);
-        } catch (SQLException e) {
+    //Refactored*******
+    @SuppressWarnings("unchecked")
+    public List<Reimbursement> getAllReimbSetByStatus(Integer statusId) {
+
+        Session session = sF.openSession();
+        Transaction t = null;
+        List<Reimbursement> reimbs = new ArrayList<>();
+
+        try {
+            t = session.beginTransaction();
+
+            CriteriaBuilder cB = session.getCriteriaBuilder();
+            CriteriaQuery<Reimbursement> cR = cB.createQuery(Reimbursement.class);
+            Root<Reimbursement> root = cR.from(Reimbursement.class);
+            //Using the field name directly works, but not the annotation name="value", awesome!
+            cR.select(root).where(cB.equal(root.get("reimbursementStatus"),statusId));
+            Query qu = session.createQuery(cR);
+            reimbs = qu.getResultList();
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
             e.printStackTrace();
         }
-        return reimbursements;
+
+        return reimbs;
+
+
+//        List<RbDTO> reimbursements = new ArrayList<>();
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseQuery + "WHERE er.reimbursement_status_id=? order by er.id";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//            ps.setInt(1,statusId);
+//            ResultSet rs = ps.executeQuery();
+//            reimbursements = mapResultSetDTO(rs);
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//        return reimbursements;
     }
 
     /**
@@ -169,19 +212,50 @@ public class ReimbursementsRepository {
      * @return returns an Option Reimbursement object
      * @throws SQLException e
      */
+
+    /*
+    It is implemented but the method
+    it calls to is not. Not completed
+     */
+    @SuppressWarnings("unchecked")
     public Optional<Reimbursement> getAReimbByReimbId(Integer reimbId) throws SQLException {
-        Optional<Reimbursement> reimbursement = Optional.empty();
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseQuery + "WHERE er.id=? order by er.id";
-            PreparedStatement ps = conn.prepareStatement(sql);
 
-            ps.setInt(1,reimbId);
+        Session session = sF.openSession();
+        Transaction t = null;
+        Optional<Reimbursement> reimb = Optional.empty();
 
-            ResultSet rs = ps.executeQuery();
+        try {
+            t = session.beginTransaction();
 
-            reimbursement = mapResultSet(rs).stream().findFirst();
+            CriteriaBuilder cB = session.getCriteriaBuilder();
+            CriteriaQuery<Reimbursement> cR = cB.createQuery(Reimbursement.class);
+            Root<Reimbursement> root = cR.from(Reimbursement.class);
+            //Using the field name directly works, but not the annotation name="value", awesome!
+            cR.select(root).where(cB.equal(root.get("id"),reimbId));
+            Query qu = session.createQuery(cR);
+            List<Reimbursement> results = qu.getResultList();
+            reimb = results.stream().findFirst();
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
+            e.printStackTrace();
         }
-        return reimbursement;
+
+        return reimb;
+//        Optional<Reimbursement> reimbursement = Optional.empty();
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseQuery + "WHERE er.id=? order by er.id";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//
+//            ps.setInt(1,reimbId);
+//
+//            ResultSet rs = ps.executeQuery();
+//
+//            reimbursement = mapResultSet(rs).stream().findFirst();
+//        }
+//        return reimbursement;
     }
 
     /**
@@ -190,21 +264,49 @@ public class ReimbursementsRepository {
      * @return a set of reimbursements mapped by the MapResultSet method
      * @throws SQLException e
      */
-    public List<RbDTO> getAllReimbSetByAuthorId(Integer authorId){
-        List<RbDTO> reimbursements = new ArrayList<>();
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseQuery + "WHERE er.author_id=? order by er.id";
-            PreparedStatement ps = conn.prepareStatement(sql);
 
-            ps.setInt(1,authorId);
 
-            ResultSet rs = ps.executeQuery();
+    //Refactored*******
+    @SuppressWarnings("unchecked")
+    public List<Reimbursement> getAllReimbSetByAuthorId(Integer authorId){
 
-            reimbursements = mapResultSetDTO(rs);
-        } catch (SQLException e) {
+        Session session = sF.openSession();
+        Transaction t = null;
+        List<Reimbursement> reimbs = new ArrayList<>();
+
+        try {
+            t = session.beginTransaction();
+
+            CriteriaBuilder cB = session.getCriteriaBuilder();
+            CriteriaQuery<Reimbursement> cR = cB.createQuery(Reimbursement.class);
+            Root<Reimbursement> root = cR.from(Reimbursement.class);
+            //Using the field name directly works, but not the annotation name="value", awesome!
+            cR.select(root).where(cB.equal(root.get("authorId"),authorId));
+            Query qu = session.createQuery(cR);
+            reimbs = qu.getResultList();
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
             e.printStackTrace();
         }
-        return reimbursements;
+
+        return reimbs;
+//        List<RbDTO> reimbursements = new ArrayList<>();
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseQuery + "WHERE er.author_id=? order by er.id";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//
+//            ps.setInt(1,authorId);
+//
+//            ResultSet rs = ps.executeQuery();
+//
+//            reimbursements = mapResultSetDTO(rs);
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//        return reimbursements;
     }
 
     /**
@@ -214,18 +316,48 @@ public class ReimbursementsRepository {
      * @return a set of reimbursements mapped by the MapResultSet method
      * @throws SQLException e
      */
-    public List<RbDTO> getAllReimbSetByAuthorIdAndStatus(Integer authorId, ReimbursementStatus reStat) throws SQLException {
-        List<RbDTO> reimbursements = new ArrayList<>();
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseQuery + "WHERE er.author_id=? AND er.reimbursement_status_id=? order by er.id";
-            PreparedStatement ps = conn.prepareStatement(sql);
 
-            ps.setInt(1,authorId);
-            ps.setInt(2,reStat.ordinal() + 1);
-            ResultSet rs = ps.executeQuery();
-            reimbursements = mapResultSetDTO(rs);
+    //Refactored*******
+    @SuppressWarnings("unchecked")
+    public List<Reimbursement> getAllReimbSetByAuthorIdAndStatus(Integer authorId, ReimbursementStatus reStat) throws SQLException {
+
+        Session session = sF.openSession();
+        Transaction t = null;
+        List<Reimbursement> reimbs = new ArrayList<>();
+
+        try {
+            t = session.beginTransaction();
+
+            CriteriaBuilder cB = session.getCriteriaBuilder();
+            CriteriaQuery<Reimbursement> cR = cB.createQuery(Reimbursement.class);
+            Root<Reimbursement> root = cR.from(Reimbursement.class);
+            Predicate pred = cB.equal(root.get("authorId"),authorId);
+            Predicate pred2 = cB.equal(root.get("reimbursementStatus"),reStat);
+
+            cR.select(root).where(cB.and(pred,pred2));
+            Query qu = session.createQuery(cR);
+            reimbs = qu.getResultList();
+
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
+            e.printStackTrace();
         }
-        return reimbursements;
+
+        return reimbs;
+//        List<RbDTO> reimbursements = new ArrayList<>();
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseQuery + "WHERE er.author_id=? AND er.reimbursement_status_id=? order by er.id";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//
+//            ps.setInt(1,authorId);
+//            ps.setInt(2,reStat.ordinal() + 1);
+//            ResultSet rs = ps.executeQuery();
+//            reimbursements = mapResultSetDTO(rs);
+//        }
+//        return reimbursements;
     }
 
     /**
@@ -249,18 +381,43 @@ public class ReimbursementsRepository {
         return reimbursements;
     }
 
-    public List<RbDTO> getAllReimbSetByType(Integer typeId)  {
-        List<RbDTO> reimbursements = new ArrayList<>();
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-            String sql = baseQuery + "WHERE er.reimbursement_type_id=? order by er.id";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setInt(1,typeId);
-            ResultSet rs = ps.executeQuery();
-            reimbursements = mapResultSetDTO(rs);
-        } catch (SQLException e) {
+    //Refactored
+    public List<Reimbursement> getAllReimbSetByType(Integer typeId)  {
+
+        Session session = sF.openSession();
+        Transaction t = null;
+        List<Reimbursement> reimbs = new ArrayList<>();
+
+        try {
+            t = session.beginTransaction();
+
+            CriteriaBuilder cB = session.getCriteriaBuilder();
+            CriteriaQuery<Reimbursement> cR = cB.createQuery(Reimbursement.class);
+            Root<Reimbursement> root = cR.from(Reimbursement.class);
+            //Using the field name directly works, but not the annotation name="value", awesome!
+            cR.select(root).where(cB.equal(root.get("reimbursementType"),typeId));
+            Query qu = session.createQuery(cR);
+            reimbs = qu.getResultList();
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
             e.printStackTrace();
         }
-        return reimbursements;
+
+        return reimbs;
+//        List<RbDTO> reimbursements = new ArrayList<>();
+//        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
+//            String sql = baseQuery + "WHERE er.reimbursement_type_id=? order by er.id";
+//            PreparedStatement ps = conn.prepareStatement(sql);
+//            ps.setInt(1,typeId);
+//            ResultSet rs = ps.executeQuery();
+//            reimbursements = mapResultSetDTO(rs);
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//        return reimbursements;
     }
 
     /**

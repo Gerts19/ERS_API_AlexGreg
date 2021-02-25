@@ -39,9 +39,11 @@ public class Reimbursement {
     private int resolverId;
 
     @Column(name="reimbursement_status_id",nullable = false)
+    @Convert(converter=StatusAttributeConverter.class)
     private ReimbursementStatus reimbursementStatus;
 
     @Column(name="reimbursement_type_id",nullable = false)
+    @Convert(converter=TypeAttributeConverter.class)
     private ReimbursementType reimbursementType;
 
     public Reimbursement() {
