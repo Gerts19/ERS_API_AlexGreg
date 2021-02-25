@@ -34,18 +34,27 @@ public class Driver {
       ReimbursementsRepository rR = new ReimbursementsRepository(sF);
       ReimbursementService rS = new ReimbursementService(rR);
 
+//      User user = new User("greg10", "pass", "Greg", "Gertson", "greg10@gmail.com");
+//      userServ.register(user);
 
+//      User newUser = new User("alex10", "pass", "Alex",
+//                                    "Googe","alex10@gmail.com");
+//      newUser.setUserId(2);
+//      newUser.setUserRole(2);
+//      userServ.update(newUser);
 
-
-//        rS.approve(1,1);
-//        rS.deny(1,2);
-
-      Reimbursement r = new Reimbursement(123.45, "Big Dinner",
-                                            1, ReimbursementStatus.getByNumber(4),ReimbursementType.getByNumber(3));
+      Reimbursement r = new Reimbursement(45.54, "Big Greg Breakfast2",
+                                            3, ReimbursementStatus.getByNumber(1),ReimbursementType.getByNumber(3));
 
       r.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
-      r.setId(1);
-      rS.updateEMP(r);
+      rS.save(r);
+
+//      Reimbursement r1 = new Reimbursement(543.21, "Big Alex Breakfast",
+//              2, ReimbursementStatus.getByNumber(1),ReimbursementType.getByNumber(3));
+//
+//      r1.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
+//      rS.save(r1);
+
 
       //getAReimbByReimbId
 

@@ -6,6 +6,7 @@ import com.revature.repositories.ReimbursementsRepository;
 import com.revature.repositories.UserRepository;
 import com.revature.services.ReimbursementService;
 import com.revature.services.UserService;
+import com.revature.util.ServiceUtil;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
@@ -39,21 +40,30 @@ public class LoginServlet extends HttpServlet {
         String password = req.getParameter("pass");
 
 
-        SessionFactory sF = new Configuration()
-                .addAnnotatedClass(User.class)
-                .addAnnotatedClass(Reimbursement.class).buildSessionFactory();
-
-
-        UserRepository userRepo = new UserRepository(sF);
-        UserService userServ = new UserService(userRepo);
-        ReimbursementsRepository rR = new ReimbursementsRepository(sF);
-        ReimbursementService rS = new ReimbursementService(rR);
+//        SessionFactory sF = new Configuration()
+//                .addAnnotatedClass(User.class)
+//                .addAnnotatedClass(Reimbursement.class).buildSessionFactory();
+//
+//
+//        UserRepository userRepo = new UserRepository(sF);
+//        UserService userServ = new UserService(userRepo);
+//        ReimbursementsRepository rR = new ReimbursementsRepository(sF);
+//        ReimbursementService rS = new ReimbursementService(rR);
 
         out.println("<p>" + username + " " + password + "</p>");
 
+        User user = ServiceUtil.getUserService().authenticate(username, password);
 
-        if(userServ.authenticate(username, password) != null){
+        if(user != null){
             out.println("<p>Login successful</p>");
+            HttpSession session = req.getSession();
+            session.setAttribute("user_id", user.getUserId());
+            session.setAttribute("username", user.getUsername());
+            session.setAttribute("name", user.getFirstname() + " " + user.getLastname());
+            session.setAttribute("email", user.getEmail());
+            session.setAttribute("role", user.getUserRole());
+
+            out.println("<p>Welcome " + session.getAttribute("name"));
         }
         else{
             out.println("<p>Login failed</p>");
