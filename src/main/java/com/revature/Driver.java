@@ -29,10 +29,8 @@ public class Driver {
                                 .addAnnotatedClass(User.class)
                                 .addAnnotatedClass(Reimbursement.class).buildSessionFactory();
 
-      //UserRepository userRepo = new UserRepository(sF);
-      //UserService userServ = new UserService(userRepo);
-
-
+      UserRepository userRepo = new UserRepository(sF);
+      UserService userServ = new UserService(userRepo);
       ReimbursementsRepository rR = new ReimbursementsRepository(sF);
       ReimbursementService rS = new ReimbursementService(rR);
 
