@@ -3,6 +3,7 @@ package com.revature.models;
 import javax.persistence.*;
 import java.io.File;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -39,9 +40,11 @@ public class Reimbursement {
     private int resolverId;
 
     @Column(name="reimbursement_status_id",nullable = false)
+    @Convert(converter=StatusAttributeConverter.class)
     private ReimbursementStatus reimbursementStatus;
 
     @Column(name="reimbursement_type_id",nullable = false)
+    @Convert(converter=TypeAttributeConverter.class)
     private ReimbursementType reimbursementType;
 
     public Reimbursement() {
@@ -65,6 +68,16 @@ public class Reimbursement {
         this.authorId = authorId;
         this.reimbursementStatus = reimbursementStatus;
         this.reimbursementType = reimbursementType;
+    }
+
+    public Reimbursement(Reimbursement reimb){
+
+        this.amount = reimb.getAmount();
+        this.description = reimb.getDescription();
+        this.authorId = reimb.getAuthorId();
+        this.reimbursementStatus = ReimbursementStatus.PENDING;
+        this.reimbursementType = reimb.getReimbursementType();
+        this.submitted = Timestamp.valueOf(LocalDateTime.now());
     }
 
     public Reimbursement(Integer id, Double amount, Timestamp submitted,

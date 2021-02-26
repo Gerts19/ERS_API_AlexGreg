@@ -87,7 +87,7 @@ public class UserRepository {
 
         try {
             t = session.beginTransaction();
-            users = session.createQuery("FROM ers_users").list();
+            users = session.createQuery("FROM User").list();
             t.commit();
         } catch (Exception e) {
             if(t!=null){
@@ -108,6 +108,32 @@ public class UserRepository {
 //            e.printStackTrace();
 //        }
 //        return users;
+    }
+
+    public User getAUserById(int userId) {
+        Session session = sF.openSession();
+        Transaction t = null;
+        Optional<User> user = Optional.empty();
+
+        try {
+            t = session.beginTransaction();
+
+            CriteriaBuilder cB = session.getCriteriaBuilder();
+            CriteriaQuery<User> cR = cB.createQuery(User.class);
+            Root<User> root = cR.from(User.class);
+            cR.select(root).where(cB.equal(root.get("userId"),userId));
+            Query qu = session.createQuery(cR);
+            List<User> results = qu.getResultList();
+            user = results.stream().findFirst();
+            t.commit();
+        } catch (Exception e) {
+            if(t!=null){
+                t.rollback();
+            }
+            e.printStackTrace();
+        }
+
+        return user.get();
     }
 
     /**
@@ -290,9 +316,11 @@ public class UserRepository {
         Transaction t = null;
         boolean success = false;
 
+        User user = getAUserById(userId);
+
         try {
             t = session.beginTransaction();
-            session.delete(userId);
+            session.delete(user);
             t.commit();
             success = true;
         } catch (Exception e) {

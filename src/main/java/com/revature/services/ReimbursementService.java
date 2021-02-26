@@ -4,6 +4,7 @@ import com.revature.dtos.RbDTO;
 import com.revature.models.Reimbursement;
 import com.revature.repositories.ReimbursementsRepository;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -22,8 +23,8 @@ public class ReimbursementService {
      * Gets all Reimbursements from the DataBase
      * @return A list of RbDTO objects
      */
-    public List<RbDTO> getAllReimb(){
-        List<RbDTO> reimbursements = reimbRepo.getAllReimbursements();
+    public List<Reimbursement> getAllReimb(){
+        List<Reimbursement> reimbursements = reimbRepo.getAllReimbursements();
         if (reimbursements.isEmpty()){
             throw new RuntimeException();
         }
@@ -35,15 +36,32 @@ public class ReimbursementService {
      * @param userId user id requested
      * @return A list of RbDTO objects
      */
-    public List<RbDTO> getReimbByUserId(Integer userId){
+    public List<Reimbursement> getReimbByUserId(Integer userId){
         if (userId <= 0){
             throw new RuntimeException("THE PROVIDED USER ID CANNOT BE LESS THAN OR EQUAL TO ZERO");
         }
-        List<RbDTO> reimb = reimbRepo.getAllReimbSetByAuthorId(userId);
+        List<Reimbursement> reimb = reimbRepo.getAllReimbSetByAuthorId(userId);
+
         if (reimb.isEmpty()){
             throw new RuntimeException();
         }
         return reimb;
+    }
+
+    public Reimbursement getReimbByReimbId(Integer reimbId){
+
+        if(reimbId<=0){
+            throw new RuntimeException();
+        }
+
+        Reimbursement r = null;
+
+        try {
+            r = reimbRepo.getAReimbByReimbId(reimbId).get();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return r;
     }
 
     /**
@@ -51,11 +69,11 @@ public class ReimbursementService {
      * @param typeId ordinal number of the type requested, between 1-4
      * @return A list of RbDTO objects
      */
-    public List<RbDTO> getReimbByType(Integer typeId){
+    public List<Reimbursement> getReimbByType(Integer typeId){
         if (typeId <= 0 || typeId >=5){
             throw new RuntimeException("THE PROVIDED USER ID CANNOT BE LESS THAN OR EQUAL TO ZERO");
         }
-        List<RbDTO> reimb = reimbRepo.getAllReimbSetByType(typeId);
+        List<Reimbursement> reimb = reimbRepo.getAllReimbSetByType(typeId);
         if (reimb.isEmpty()){
             throw new RuntimeException();
         }
@@ -67,11 +85,11 @@ public class ReimbursementService {
      * @param statusId ordinal number of the type requested, between 1-3
      * @return A list of RbDTO objects
      */
-    public List<RbDTO> getReimbByStatus(Integer statusId){
+    public List<Reimbursement> getReimbByStatus(Integer statusId){
         if (statusId <= 0 || statusId >= 4){
             throw new RuntimeException("THE PROVIDED USER ID CANNOT BE LESS THAN OR EQUAL TO ZERO");
         }
-        List<RbDTO> reimb = reimbRepo.getAllReimbSetByStatus(statusId);
+        List<Reimbursement> reimb = reimbRepo.getAllReimbSetByStatus(statusId);
         if (reimb.isEmpty()){
             throw new RuntimeException();
         }

@@ -1,5 +1,7 @@
 package com.revature.models;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum ReimbursementType {
     // values declared within enums are constants and are comma separated
     LODGING("Lodging"),

@@ -14,9 +14,11 @@ import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public class Driver {
 
@@ -29,66 +31,12 @@ public class Driver {
 
       UserRepository userRepo = new UserRepository(sF);
       UserService userServ = new UserService(userRepo);
-
-
       ReimbursementsRepository rR = new ReimbursementsRepository(sF);
       ReimbursementService rS = new ReimbursementService(rR);
 
-      List<RbDTO> allReimb =  rS.getAllReimb();
-
-      for(RbDTO r: allReimb){
-
-      System.out.println(r.toString());
-      }
-
-//      if(userServ.isUsernameAvailable("alex10")){
-//          System.out.println("username is available");
-//      }
-//      else{
-//      System.out.println("Success");
-//      }
-
-
-//        User u = userServ.authenticate("alex10","pass");
-//        System.out.println(u.toString());
-
-//      if(userServ.isEmailAvailable("alex10@gmail.com")){
-//      System.out.println("email is available");
-//      }
-//      else{
-//      System.out.println("Success");
-//      }
-
-//      try {
-//          t = session.beginTransaction();
-//          User newUser = new User("alex10", "pass", "Alex",
-//                                    "Googe","alex10@gmail.com");
-//          newUser.setUserRole(1);
-//          int value = (int) session.save(newUser);
-//          newUser.setUserId(value);
-//          t.commit();
-//      } catch (Exception e) {
-//          if(t!=null){
-//              t.rollback();
-//          }
-//          e.printStackTrace();
-//      }
-
-//      try {
-//          t = session.beginTransaction();
-//          Reimbursement r = new Reimbursement(123.45, "Big lunch",
-//                                            1, ReimbursementStatus.getByNumber(2),ReimbursementType.getByNumber(3));
-//
-//          r.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
-//          r.setId((int) session.save(r));
-//          t.commit();
-//      } catch (Exception e) {
-//          if(t!=null){
-//              t.rollback();
-//          }
-//          e.printStackTrace();
-//      }
-
+      Reimbursement reimbursement = new Reimbursement(123.45, "Big Test", 7, ReimbursementStatus.getByNumber(1),ReimbursementType.getByNumber(1));
+      reimbursement.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
+      rS.save(reimbursement);
 
 
   }
