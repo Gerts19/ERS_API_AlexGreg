@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -152,6 +154,7 @@ public class ViewReimbursements extends HttpServlet {
 
 
             Reimbursement updateReimb = objectMapper.readValue(req.getInputStream(),Reimbursement.class);
+            updateReimb.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
             ReimbursementStatus status = ServiceUtil.getReimbService().getReimbByReimbId(updateReimb.getId()).getReimbursementStatus();
 
 
@@ -164,7 +167,7 @@ public class ViewReimbursements extends HttpServlet {
                 resp.setStatus(HttpServletResponse.SC_CONFLICT);
             }
 
-            writer.write("<p> Updated user: "+ updateReimb.toString() +" </p>");
+            //writer.write("<p> Updated user: "+ updateReimb.toString() +" </p>");
 
         }
     }
