@@ -1,6 +1,8 @@
 package com.revature.servlets;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.revature.models.Reimbursement;
+import com.revature.models.ReimbursementStatus;
 import com.revature.util.ServiceUtil;
 
 import javax.servlet.ServletException;
@@ -15,13 +17,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-@WebServlet(name="ViewReimbursements", urlPatterns = "/view")
+@WebServlet(name="ViewReimbursements", urlPatterns = "/reimbursements")
 public class ViewReimbursements extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         HttpSession session = req.getSession();
+
+
+
         int role_id = (int) session.getAttribute("role");
 
         PrintWriter writer = resp.getWriter();
@@ -69,35 +74,98 @@ public class ViewReimbursements extends HttpServlet {
                         reimbursements = ServiceUtil.getReimbService().getAllReimb();
                 }
 
-//                if (filter.toLowerCase().equals("status")) {
-//                    writer.write("Did I get here?");
-//
-//                    //Status id = 4 is not showing the Reimbursement?
-//                    reimbursements = ServiceUtil.getReimbService().getReimbByStatus(status);
-//                } else if (filter.toLowerCase().equals("type")) {
-//                    writer.write("Did I get here?");
-//                    reimbursements = ServiceUtil.getReimbService().getReimbByType(type);
-//                } else {
-//                    writer.write("Did I get here?");
-//                    reimbursements = ServiceUtil.getReimbService().getAllReimb();
-//                }
-
                 for (Reimbursement r : reimbursements) {
                     writer.write("\n" + r.toString());
                 }
                 break;
             case 3:
                 //EMPLOYEE
+                parameterNames = req.getParameterMap().keySet();
+                int reimbId = 0;
+
                 int id = (int) session.getAttribute("user_id");
                 reimbursements = ServiceUtil.getReimbService().getReimbByUserId(id);
-
+                resp.setStatus(HttpServletResponse.SC_OK);
                 writer.write("<p>" + session.getAttribute("name") + "'s reimbursements</p>");
-                for (Reimbursement r : reimbursements) {
-                    writer.write(r.toString());
+
+                if (parameterNames.contains("reimbId")) {
+                    reimbId = Integer.parseInt(req.getParameter("reimbId"));
                 }
+
+                if (reimbId > 0) {
+                    for (Reimbursement r : reimbursements) {
+                        if (reimbId == r.getId())
+                            writer.write(r.toString());
+                    }
+                } else {
+                    for (Reimbursement r : reimbursements) {
+                        writer.write(r.toString());
+                    }
+                }
+                break;
 
             default:
                 resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        }
+    }
+
+    // Reimbursement Type is always type 4.
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
+        HttpSession session = req.getSession();
+        int role_id = (int) session.getAttribute("role");
+
+        PrintWriter writer = resp.getWriter();
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        if(role_id==3){
+
+            //Test1 - pass JSON from post request
+            Reimbursement newReimb = new Reimbursement(objectMapper.readValue(req.getInputStream(),Reimbursement.class));
+
+            writer.write(newReimb.toString());
+
+            ServiceUtil.getReimbService().save(newReimb);
+            resp.setStatus(HttpServletResponse.SC_CREATED);
+            writer.write("<p> Added user: "+ newReimb.toString() +" </p>");
+
+
+        }
+
+        else{
+            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            //writer.write("<p> " + role_id + " : does not have permission </p>");
+        }
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
+        HttpSession session = req.getSession();
+        int role_id = (int) session.getAttribute("role");
+
+        PrintWriter writer = resp.getWriter();
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        if(role_id==3){
+
+
+            Reimbursement updateReimb = objectMapper.readValue(req.getInputStream(),Reimbursement.class);
+            ReimbursementStatus status = ServiceUtil.getReimbService().getReimbByReimbId(updateReimb.getId()).getReimbursementStatus();
+
+
+            if(status== ReimbursementStatus.PENDING){
+                ServiceUtil.getReimbService().updateEMP(updateReimb);
+                resp.setStatus(HttpServletResponse.SC_OK);
+
+            }
+            else{
+                resp.setStatus(HttpServletResponse.SC_CONFLICT);
+            }
+
+            writer.write("<p> Updated user: "+ updateReimb.toString() +" </p>");
+
         }
     }
 }

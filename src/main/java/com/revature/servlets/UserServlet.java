@@ -100,6 +100,7 @@ public class UserServlet extends HttpServlet {
             if (parameterNames.contains("deleteId")) {
                 delete = Integer.parseInt(req.getParameter("deleteId"));
                 ServiceUtil.getUserService().deleteUserById(delete);
+                resp.setStatus(HttpServletResponse.SC_OK);
             }
         }
 
