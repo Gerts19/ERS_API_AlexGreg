@@ -23,6 +23,8 @@ public class UserServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
 
         HttpSession session = req.getSession();
+
+
         int role_id = (int) session.getAttribute("role");
 
         PrintWriter writer = resp.getWriter();
@@ -95,8 +97,8 @@ public class UserServlet extends HttpServlet {
 
         if(role_id==1){
 
-            if (parameterNames.contains("delete")) {
-                delete = Integer.parseInt(req.getParameter("delete"));
+            if (parameterNames.contains("deleteId")) {
+                delete = Integer.parseInt(req.getParameter("deleteId"));
                 ServiceUtil.getUserService().deleteUserById(delete);
             }
         }
@@ -120,23 +122,9 @@ public class UserServlet extends HttpServlet {
 
         if(role_id==1){
 
-            String user = "";
-            String userName = "";
-
-            Set<String> parameterNames = req.getParameterMap().keySet();
-
-            if (parameterNames.contains("user")) {
-                userName = req.getParameter("user");
-            }
-
-            //Not great, have to handle variety of query strings for this
-            User userToUpdate = ServiceUtil.getUserService().getUserByUserName(userName).get();
-            writer.write("<p> User before update: "+ userToUpdate.toString() +" </p>");
-            userToUpdate.setUsername("diffUserName");
-            userToUpdate.setPassword("diffPassword");
-            userToUpdate.setUserRole(2);
-            ServiceUtil.getUserService().update(userToUpdate);
-            writer.write("<p> Updated user: "+ userToUpdate.toString() +" </p>");
+            User newUser = objectMapper.readValue(req.getInputStream(),User.class);
+            ServiceUtil.getUserService().update(newUser);
+            writer.write("<p> Updated user: "+ newUser.toString() +" </p>");
         }
 
         else{

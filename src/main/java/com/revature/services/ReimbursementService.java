@@ -4,6 +4,7 @@ import com.revature.dtos.RbDTO;
 import com.revature.models.Reimbursement;
 import com.revature.repositories.ReimbursementsRepository;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -45,6 +46,22 @@ public class ReimbursementService {
             throw new RuntimeException();
         }
         return reimb;
+    }
+
+    public Reimbursement getReimbByReimbId(Integer reimbId){
+
+        if(reimbId<=0){
+            throw new RuntimeException();
+        }
+
+        Reimbursement r = null;
+
+        try {
+            r = reimbRepo.getAReimbByReimbId(reimbId).get();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return r;
     }
 
     /**

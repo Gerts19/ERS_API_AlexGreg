@@ -43,8 +43,7 @@ public class LoginServlet extends HttpServlet {
         if(user != null){
             out.println("<p>Login successful</p>");
             HttpSession session = req.getSession();
-            //Can we save the whole user
-            session.setAttribute("user", user);
+
 
             session.setAttribute("user_id", user.getUserId());
             session.setAttribute("username", user.getUsername());

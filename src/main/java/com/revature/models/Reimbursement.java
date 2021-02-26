@@ -3,6 +3,7 @@ package com.revature.models;
 import javax.persistence.*;
 import java.io.File;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -76,6 +77,7 @@ public class Reimbursement {
         this.authorId = reimb.getAuthorId();
         this.reimbursementStatus = ReimbursementStatus.PENDING;
         this.reimbursementType = reimb.getReimbursementType();
+        this.submitted = Timestamp.valueOf(LocalDateTime.now());
     }
 
     public Reimbursement(Integer id, Double amount, Timestamp submitted,

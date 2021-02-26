@@ -2,6 +2,7 @@ package com.revature.servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.revature.models.Reimbursement;
+import com.revature.models.ReimbursementStatus;
 import com.revature.models.User;
 import com.revature.util.ServiceUtil;
 
@@ -56,21 +57,21 @@ public class SubmitReimbursement extends HttpServlet {
         if(role_id==3){
 
 
+            Reimbursement updateReimb = objectMapper.readValue(req.getInputStream(),Reimbursement.class);
+            ReimbursementStatus status = ServiceUtil.getReimbService().getReimbByReimbId(updateReimb.getId()).getReimbursementStatus();
 
-            //In progress
-//            writer.write(newReimb.toString());
-//
-//            ServiceUtil.getReimbService().save(newReimb);
-//            resp.setStatus(HttpServletResponse.SC_CREATED);
-//            writer.write("<p> Added user: "+ newReimb.toString() +" </p>");
 
+            if(status== ReimbursementStatus.PENDING){
+                ServiceUtil.getReimbService().updateEMP(updateReimb);
+                resp.setStatus(HttpServletResponse.SC_OK);
+
+            }
+            else{
+                resp.setStatus(HttpServletResponse.SC_CONFLICT);
+            }
+
+            writer.write("<p> Updated user: "+ updateReimb.toString() +" </p>");
 
         }
-
-        else{
-            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            //writer.write("<p> " + role_id + " : does not have permission </p>");
-        }
-
     }
 }
