@@ -34,6 +34,10 @@ public class Driver {
       ReimbursementsRepository rR = new ReimbursementsRepository(sF);
       ReimbursementService rS = new ReimbursementService(rR);
 
+      Reimbursement reimbursement = new Reimbursement(123.45, "Big Test", 7, ReimbursementStatus.getByNumber(1),ReimbursementType.getByNumber(1));
+      reimbursement.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
+      rS.save(reimbursement);
+
 
   }
 }

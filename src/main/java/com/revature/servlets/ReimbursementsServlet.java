@@ -1,6 +1,7 @@
 package com.revature.servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.revature.dtos.ApproveDeny;
 import com.revature.models.Reimbursement;
 import com.revature.models.ReimbursementStatus;
 import com.revature.util.ServiceUtil;
@@ -19,15 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-@WebServlet(name="ViewReimbursements", urlPatterns = "/reimbursements")
-public class ViewReimbursements extends HttpServlet {
+@WebServlet(name="Reimbursements", urlPatterns = "/reimbursements")
+public class ReimbursementsServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         HttpSession session = req.getSession();
-
-
 
         int role_id = (int) session.getAttribute("role");
 
@@ -44,6 +43,7 @@ public class ViewReimbursements extends HttpServlet {
                 String filter = "";
                 int status;
                 int type;
+                int reimbId = 0;
 
                 Set<String> parameterNames = req.getParameterMap().keySet();
 
@@ -51,26 +51,35 @@ public class ViewReimbursements extends HttpServlet {
                     filter = req.getParameter("filter");
                 }
 
-                if (parameterNames.contains("status_id")) {
-                    status = Integer.parseInt(req.getParameter("status_id"));
+                if (parameterNames.contains("statusId")) {
+                    status = Integer.parseInt(req.getParameter("statusId"));
                 }
 
-                if (parameterNames.contains("type_id")) {
-                    type = Integer.parseInt(req.getParameter("type_id"));
+                if (parameterNames.contains("typeId")) {
+                    type = Integer.parseInt(req.getParameter("typeId"));
                 }
 
-                List<Reimbursement> reimbursements;
+                if (parameterNames.contains("reimbId")) {
+                    reimbId = Integer.parseInt(req.getParameter("reimbId"));
+                }
+
+                List<Reimbursement> reimbursements = new ArrayList<>();
 
                 switch (filter.toLowerCase()) {
                     case "status":
-                        status = Integer.parseInt(req.getParameter("status_id"));
+                        status = Integer.parseInt(req.getParameter("statusId"));
                         writer.write("<p> status is: " + status + "</p>");
                         reimbursements = ServiceUtil.getReimbService().getReimbByStatus(status);
                         break;
                     case "type":
-                        type = Integer.parseInt(req.getParameter("type_id"));
+                        type = Integer.parseInt(req.getParameter("typeId"));
                         writer.write(("<p> type is: " + type + "</p>"));
                         reimbursements = ServiceUtil.getReimbService().getReimbByStatus(type);
+                        break;
+                    case "single":
+                        reimbId = Integer.parseInt(req.getParameter("reimbId"));
+                        writer.write(("<p> reimbId is: " + reimbId + "</p>"));
+                        reimbursements.add(ServiceUtil.getReimbService().getReimbByReimbId(reimbId));
                         break;
                     default:
                         reimbursements = ServiceUtil.getReimbService().getAllReimb();
@@ -83,7 +92,7 @@ public class ViewReimbursements extends HttpServlet {
             case 3:
                 //EMPLOYEE
                 parameterNames = req.getParameterMap().keySet();
-                int reimbId = 0;
+                reimbId = 0;
 
                 int id = (int) session.getAttribute("user_id");
                 reimbursements = ServiceUtil.getReimbService().getReimbByUserId(id);
@@ -150,25 +159,40 @@ public class ViewReimbursements extends HttpServlet {
         PrintWriter writer = resp.getWriter();
         ObjectMapper objectMapper = new ObjectMapper();
 
-        if(role_id==3){
+        switch (role_id) {
+            case 3:
 
+                Reimbursement updateReimb = objectMapper.readValue(req.getInputStream(),Reimbursement.class);
+                updateReimb.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
+                ReimbursementStatus status = ServiceUtil.getReimbService().getReimbByReimbId(updateReimb.getId()).getReimbursementStatus();
 
-            Reimbursement updateReimb = objectMapper.readValue(req.getInputStream(),Reimbursement.class);
-            updateReimb.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
-            ReimbursementStatus status = ServiceUtil.getReimbService().getReimbByReimbId(updateReimb.getId()).getReimbursementStatus();
+                if(status== ReimbursementStatus.PENDING){
+                    ServiceUtil.getReimbService().updateEMP(updateReimb);
+                    resp.setStatus(HttpServletResponse.SC_OK);
 
+                }
+                else{
+                    resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                }
 
-            if(status== ReimbursementStatus.PENDING){
-                ServiceUtil.getReimbService().updateEMP(updateReimb);
-                resp.setStatus(HttpServletResponse.SC_OK);
+                //writer.write("<p> Updated user: "+ updateReimb.toString() +" </p>");
+                break;
 
-            }
-            else{
-                resp.setStatus(HttpServletResponse.SC_CONFLICT);
-            }
+            case 2:
+                // FINANCE MANAGER
 
-            //writer.write("<p> Updated user: "+ updateReimb.toString() +" </p>");
+                int userId = (int) session.getAttribute("user_id");
 
+                ApproveDeny approveDeny = objectMapper.readValue(req.getInputStream(), ApproveDeny.class);
+
+                if (approveDeny.getStatus() == 0) {
+                    ServiceUtil.getReimbService().deny(userId, approveDeny.getId());
+                    resp.setStatus(200);
+                } else if (approveDeny.getStatus() == 1) {
+                    ServiceUtil.getReimbService().approve(userId, approveDeny.getId());
+                    resp.setStatus(200);
+                }
+                break;
         }
     }
 }
