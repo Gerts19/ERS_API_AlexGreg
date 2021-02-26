@@ -20,177 +20,279 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * HttpServlet that handles Reimbursements
+ *
+ * @author Alex Googe (github: darkspearrai), Greg Gertson (github: Gerts19)
+ */
 @WebServlet(name="Reimbursements", urlPatterns = "/reimbursements")
 public class ReimbursementsServlet extends HttpServlet {
 
+    /**
+     * Handles Employee and Finance Manager GET requests for Reimbursements
+     * @param req Http request object
+     * @param resp Http response object
+     * @throws ServletException
+     * @throws IOException
+     */
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
+        // Get session. . .
         HttpSession session = req.getSession();
 
+        // Get logged in User's role. . .
         int role_id = (int) session.getAttribute("role");
 
+        // Create an ObjectMapper. . .
+        ObjectMapper mapper = new ObjectMapper();
+
+        // Get the PrintWriter. . .
         PrintWriter writer = resp.getWriter();
 
-        writer.write("<p>Your role value is: " + role_id + "</p>");
+        // Set content type and encoding. . .
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
 
+        // Switch on role_id. . .
         switch (role_id) {
-            case 2:
-                //FINANCE MANAGER
 
-                // TODO
-                // Figure out how to use query params without having to use all 3 or any at all.
+            //FINANCE MANAGER
+            case 2:
+
+                // Instantiate potential filters. . .
                 String filter = "";
-                int status;
-                int type;
+                int status = 0;
+                int type = 0;
                 int reimbId = 0;
 
+                // Get parameter names into a Set. . .
                 Set<String> parameterNames = req.getParameterMap().keySet();
 
+                // If there is a filter param. . .
                 if (parameterNames.contains("filter")) {
                     filter = req.getParameter("filter");
                 }
 
+                // If there is a statusId param. . .
                 if (parameterNames.contains("statusId")) {
                     status = Integer.parseInt(req.getParameter("statusId"));
                 }
 
+                // If there is a typeId param. . .
                 if (parameterNames.contains("typeId")) {
                     type = Integer.parseInt(req.getParameter("typeId"));
                 }
 
+                // If there is a reimbId param. . .
                 if (parameterNames.contains("reimbId")) {
                     reimbId = Integer.parseInt(req.getParameter("reimbId"));
                 }
 
+                // List of Reimbursements to return / map. . .
                 List<Reimbursement> reimbursements = new ArrayList<>();
 
+                // Switch on filter. . .
                 switch (filter.toLowerCase()) {
+
+                    // Filter by Status. . .
                     case "status":
-                        status = Integer.parseInt(req.getParameter("statusId"));
-                        writer.write("<p> status is: " + status + "</p>");
                         reimbursements = ServiceUtil.getReimbService().getReimbByStatus(status);
                         break;
+
+                    // Filter by Type. . .
                     case "type":
-                        type = Integer.parseInt(req.getParameter("typeId"));
-                        writer.write(("<p> type is: " + type + "</p>"));
                         reimbursements = ServiceUtil.getReimbService().getReimbByStatus(type);
                         break;
+
+                    // Filter by single Reimbursement
                     case "single":
-                        reimbId = Integer.parseInt(req.getParameter("reimbId"));
-                        writer.write(("<p> reimbId is: " + reimbId + "</p>"));
                         reimbursements.add(ServiceUtil.getReimbService().getReimbByReimbId(reimbId));
                         break;
+
+                    // No filter (get all). . .
                     default:
                         reimbursements = ServiceUtil.getReimbService().getAllReimb();
                 }
 
+                // For each Reimbursement, add the JSON to the response. . .
                 for (Reimbursement r : reimbursements) {
-                    writer.write("\n" + r.toString());
+                    writer.print(mapper.writeValueAsString(r));
                 }
                 break;
+
+            //EMPLOYEE
             case 3:
-                //EMPLOYEE
+
+                // Get parameter names in a Set. . .
                 parameterNames = req.getParameterMap().keySet();
+
+                // Potential single Reimbursement to get. . .
                 reimbId = 0;
 
+                // Get logged in User's id. . .
                 int id = (int) session.getAttribute("user_id");
-                reimbursements = ServiceUtil.getReimbService().getReimbByUserId(id);
-                resp.setStatus(HttpServletResponse.SC_OK);
-                writer.write("<p>" + session.getAttribute("name") + "'s reimbursements</p>");
 
+                // Get all logged in User's Reimbursements. . .
+                reimbursements = ServiceUtil.getReimbService().getReimbByUserId(id);
+
+                // If there is a reimbId param. . .
                 if (parameterNames.contains("reimbId")) {
                     reimbId = Integer.parseInt(req.getParameter("reimbId"));
                 }
 
+                // If there is a reimbId param, it should be > 0. . .
                 if (reimbId > 0) {
+
+                    // Check to see if the User is the author of that reimb. . .
                     for (Reimbursement r : reimbursements) {
+
+                        // If this matches, the User is the author (since each r comes from the List from User Id). . .
                         if (reimbId == r.getId())
-                            writer.write(r.toString());
+                            writer.print(mapper.writeValueAsString(r));
                     }
+
+                // Mapping all User reimbursements. . .
                 } else {
+
+                    // For each reimbursement, map to JSON and add to response. . .
                     for (Reimbursement r : reimbursements) {
-                        writer.write(r.toString());
+                        writer.print(mapper.writeValueAsString(r));
                     }
                 }
                 break;
 
+            // Not a Finance Manager or Employee. . .
             default:
+
+                // Http Code FORBIDDEN. . .
                 resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
     }
 
-    // Reimbursement Type is always type 4.
+    /**
+     * Handles Posting a new Reimbursement
+     * @param req Http request object
+     * @param resp Http response object
+     * @throws ServletException
+     * @throws IOException
+     */
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
+        // Get session. . .
         HttpSession session = req.getSession();
+
+        // Get logged in User's role. . .
         int role_id = (int) session.getAttribute("role");
 
-        PrintWriter writer = resp.getWriter();
+        // Create ObjectMapper. . .
         ObjectMapper objectMapper = new ObjectMapper();
 
-        if(role_id==3){
+        // If Employee. . .
+        if(role_id==3) {
 
-            //Test1 - pass JSON from post request
-            Reimbursement newReimb = new Reimbursement(objectMapper.readValue(req.getInputStream(),Reimbursement.class));
+            // Create a new Reimbursement from JSON. . .
+            Reimbursement newReimb = new Reimbursement(objectMapper.readValue(req.getInputStream(), Reimbursement.class));
 
-            writer.write(newReimb.toString());
-
+            // Save the Reimbursement. . .
             ServiceUtil.getReimbService().save(newReimb);
+
+            // Http Code CREATED. . .
             resp.setStatus(HttpServletResponse.SC_CREATED);
-            writer.write("<p> Added user: "+ newReimb.toString() +" </p>");
 
+        // Not an EMPLOYEE. . .
+        } else {
 
-        }
-
-        else{
+            // Http Code FORBIDDEN. . .
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            //writer.write("<p> " + role_id + " : does not have permission </p>");
         }
     }
 
+    /**
+     * Approves or Denies a Reimbursement if Finance Manager
+     * Update a Reimbursement if Employee
+     * @param req Http request object
+     * @param resp Http response object
+     * @throws ServletException
+     * @throws IOException
+     */
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
+        // Get session. . .
         HttpSession session = req.getSession();
+
+        // Get logged in User's role. . .
         int role_id = (int) session.getAttribute("role");
 
         PrintWriter writer = resp.getWriter();
+
+        // Create ObjectMapper. . .
         ObjectMapper objectMapper = new ObjectMapper();
 
+        // Functionality depending on role. . .
         switch (role_id) {
+
+            // EMPLOYEE. . .
             case 3:
 
+                // Create the updated Reimbursement from JSON. . .
                 Reimbursement updateReimb = objectMapper.readValue(req.getInputStream(),Reimbursement.class);
+
+                // Set the Submitted time to now since updating. . .
                 updateReimb.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
+
+                // Check the ACTUAL status in the database. . .
                 ReimbursementStatus status = ServiceUtil.getReimbService().getReimbByReimbId(updateReimb.getId()).getReimbursementStatus();
 
+                // If is PENDING. . .
                 if(status== ReimbursementStatus.PENDING){
+
+                    // Update the Reimbursement. . .
                     ServiceUtil.getReimbService().updateEMP(updateReimb);
+
+                    // Http Code OK. . .
                     resp.setStatus(HttpServletResponse.SC_OK);
 
-                }
-                else{
+                // Status is not PENDING. . .
+                } else {
+
+                    // Http Code CONFLICT. . .
                     resp.setStatus(HttpServletResponse.SC_CONFLICT);
                 }
-
-                //writer.write("<p> Updated user: "+ updateReimb.toString() +" </p>");
                 break;
 
+            // FINANCE MANAGER. . .
             case 2:
-                // FINANCE MANAGER
 
+                // Get logged in User's Id. . .
                 int userId = (int) session.getAttribute("user_id");
 
+                // Create a new ApproveDeny Object from JSON. . .
                 ApproveDeny approveDeny = objectMapper.readValue(req.getInputStream(), ApproveDeny.class);
 
+                // If .getStatus() = 0, deny. . .
                 if (approveDeny.getStatus() == 0) {
+
+                    // Deny the Reimbursement. . .
                     ServiceUtil.getReimbService().deny(userId, approveDeny.getId());
-                    resp.setStatus(200);
+
+                    // Http Code OK
+                    resp.setStatus(HttpServletResponse.SC_OK);
+
+                // If .getStatus() == 1, approve. . .
                 } else if (approveDeny.getStatus() == 1) {
+
+                    // Approve the Reimbursement. . .
                     ServiceUtil.getReimbService().approve(userId, approveDeny.getId());
-                    resp.setStatus(200);
+
+                    // Http Code OK
+                    resp.setStatus(HttpServletResponse.SC_OK);
+                } else {
+
+                    // Http Code CONFLICT (not a correct status for ApproveDeny). . .
+                    resp.setStatus(HttpServletResponse.SC_CONFLICT);
                 }
                 break;
         }

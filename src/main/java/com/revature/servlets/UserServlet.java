@@ -16,121 +16,180 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * An HttpServlet to handle Admin users Requests for Users
+ *
+ * @author Alex Googe (github: darkspearrai), Greg Gertson (github: Gerts19)
+ */
 @WebServlet(name="User",urlPatterns = "/user")
 public class UserServlet extends HttpServlet {
 
 
+    /**
+     * Retrieves all of the Users
+     * @param req Http request object
+     * @param resp Http response object
+     * @throws ServletException
+     * @throws IOException
+     */
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
 
+        // Get the session. . .
         HttpSession session = req.getSession();
 
-
+        // role_id of the User that is logged in. . .
         int role_id = (int) session.getAttribute("role");
 
+        // Get the PrintWriter for the response. . .
         PrintWriter writer = resp.getWriter();
 
+        // Check functionality based on role_id. . .
         switch(role_id){
 
+            // ADMIN
             case 1:
-                writer.write("<p>Confirmed: " + role_id + "</p>");
+
+                // Get all Users. . .
                 List<User> users = ServiceUtil.getUserService().getAllUsers();
+
+                resp.setContentType("application/json");
+                resp.setCharacterEncoding("UTF-8");
+                ObjectMapper mapper = new ObjectMapper();
+
+                // For each User get JSON and send it back. . .
                 for (User u : users) {
-                    writer.write(u.toString());
+                    writer.print(mapper.writeValueAsString(u));
                 }
                 break;
 
             default:
+                // ANY OTHER role_id. . .
                 resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                //writer.write("<p> " + role_id + " : does not have permission </p>");
         }
 
     }
 
+    /**
+     * Adds a User
+     * @param req Http request object
+     * @param resp Http response object
+     * @throws ServletException
+     * @throws IOException
+     */
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
+        // Get Session. . .
         HttpSession session = req.getSession();
+
+        // Get logged in User role_id. . .
         int role_id = (int) session.getAttribute("role");
 
-        PrintWriter writer = resp.getWriter();
+        // Create ObjectMapper. . .
         ObjectMapper objectMapper = new ObjectMapper();
 
+
+        // If ADMIN. . .
         if(role_id==1){
 
-            //Test1 - pass JSON from post request
+            // Create a new User from the JSON. . .
             User newUser = new User(objectMapper.readValue(req.getInputStream(),User.class));
 
-            writer.write(newUser.toString());
-
+            // Using ServiceUtil to register the newUser. . .
             ServiceUtil.getUserService().register(newUser);
+
+            // Http Code CREATED. . .
             resp.setStatus(HttpServletResponse.SC_CREATED);
-            writer.write("<p> Added user: "+ newUser.toString() +" </p>");
-
-
-               /*
-            Test2 - pass as formatted JSON object, no post data
-            String json = "{ \"username\" : \"jack10\", \"password\" : \"pass\", \"firstname\" : \"Jack\" , \"lastname\" : \"Smith\" , \"email\" : \"jack10@gmail.com\"}";
-            User newUser = objectMapper.readValue(json, User.class);
-            ServiceUtil.getUserService().register(newUser);
-            writer.write("<p> Added user: "+ newUser.toString() +" </p>");
-             */
-
-        }
-
-        else{
+        } else {
+            // Not an ADMIN. . .
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            //writer.write("<p> " + role_id + " : does not have permission </p>");
         }
 
     }
 
+    /**
+     * Deletes a User
+     * @param req Http request object
+     * @param resp Http response object
+     * @throws ServletException
+     * @throws IOException
+     */
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
+        // Get the Session. . .
         HttpSession session = req.getSession();
+
+        // Get logged in User's role_id. . .
         int role_id = (int) session.getAttribute("role");
 
+        // Get the logged in User's id. . .
+        int userId = (int) session.getAttribute("user_id");
+
         PrintWriter writer = resp.getWriter();
-        //ObjectMapper objectMapper = new ObjectMapper();
+
+        // Get parameter names in a Set. . .
         Set<String> parameterNames = req.getParameterMap().keySet();
+
+        // User's id to delete. . .
         int delete;
 
+        // If ADMIN. . .
         if(role_id==1){
 
+            // If a deleteId parameter was included. . .
             if (parameterNames.contains("deleteId")) {
                 delete = Integer.parseInt(req.getParameter("deleteId"));
-                ServiceUtil.getUserService().deleteUserById(delete);
-                resp.setStatus(HttpServletResponse.SC_OK);
-            }
-        }
 
-        else{
+                // If user is not trying to delete themselves. . .
+                if (userId != delete) {
+
+                    // Delete the specified id. . .
+                    ServiceUtil.getUserService().deleteUserById(delete);
+                    resp.setStatus(HttpServletResponse.SC_OK);
+                }
+            }
+        } else {
+            // Not an ADMIN
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            writer.write("<p> " + role_id + " : does not have permission </p>");
         }
 
     }
 
+    /**
+     * Updates a User
+     * @param req Http request object
+     * @param resp Http response object
+     * @throws ServletException
+     * @throws IOException
+     */
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-
+        // Get the session. . .
         HttpSession session = req.getSession();
+
+        // Get the logged in User's role. . .
         int role_id = (int) session.getAttribute("role");
 
-        PrintWriter writer = resp.getWriter();
+        // Create an ObjectMapper. . .
         ObjectMapper objectMapper = new ObjectMapper();
 
+        // If ADMIN. . .
         if(role_id==1){
 
-            User newUser = objectMapper.readValue(req.getInputStream(),User.class);
-            ServiceUtil.getUserService().update(newUser);
-            writer.write("<p> Updated user: "+ newUser.toString() +" </p>");
-        }
+            // Map a User from the JSON. . .
+            User user = objectMapper.readValue(req.getInputStream(),User.class);
 
-        else{
+            // Update the User. . .
+            ServiceUtil.getUserService().update(user);
+
+            // Http Code OK
+            resp.setStatus(HttpServletResponse.SC_OK);
+        } else {
+
+            // Not an ADMIN. . .
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            writer.write("<p> " + role_id + " : does not have permission </p>");
         }
     }
 }
