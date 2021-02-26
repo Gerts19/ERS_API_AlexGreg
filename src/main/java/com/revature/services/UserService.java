@@ -1,5 +1,7 @@
 package com.revature.services;
 
+import com.revature.exceptions.AuthenticationException;
+import com.revature.exceptions.InvalidRequestException;
 import com.revature.exceptions.ResourcePersistenceException;
 import com.revature.models.Role;
 import com.revature.models.User;
@@ -53,10 +55,10 @@ public class UserService {
      */
     public User authenticate(String username, String password){
         if (username == null || username.trim().equals("") || password == null || password.trim().equals("")){
-            throw new RuntimeException("Invalid credentials provided");
+            throw new InvalidRequestException("Invalid credentials provided");
         }
         return userRepo.getAUserByUsernameAndPassword(username,password)
-                .orElseThrow(RuntimeException::new);
+                .orElseThrow(AuthenticationException::new);
     }
 
     /**
@@ -66,7 +68,7 @@ public class UserService {
     // TODO: encrypt all user passwords before persisting to data source
     public void register(User newUser) {
         if (!isUserValid(newUser)) {
-            throw new RuntimeException("Invalid user field values provided during registration!");
+            throw new InvalidRequestException("Invalid user field values provided during registration!");
         }
         Optional<User> existingUser = userRepo.getAUserByUsername(newUser.getUsername());
         if (existingUser.isPresent()) {
@@ -86,10 +88,10 @@ public class UserService {
      */
     public void update(User newUser) {
         if (!isUserValid(newUser)) {
-            throw new RuntimeException("Invalid user field values provided during registration!");
+            throw new InvalidRequestException("Invalid user field values provided during registration!");
         }
         if (!userRepo.updateAUser(newUser)){
-            throw new RuntimeException("There was a problem trying to update the user");
+            throw new ResourcePersistenceException("There was a problem trying to update the user");
         }
     }
 
@@ -100,7 +102,7 @@ public class UserService {
      */
     public boolean deleteUserById(int id) {
         if (id <= 0){
-            throw new RuntimeException("THE PROVIDED ID CANNOT BE LESS THAN OR EQUAL TO ZERO");
+            throw new InvalidRequestException("THE PROVIDED ID CANNOT BE LESS THAN OR EQUAL TO ZERO");
         }
         return userRepo.deleteAUserById(id);
     }
