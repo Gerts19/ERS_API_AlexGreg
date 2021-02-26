@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.revature.models.Reimbursement;
 import com.revature.models.User;
 import com.revature.util.ServiceUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -25,6 +27,7 @@ import java.util.Set;
 public class UserServlet extends HttpServlet {
 
 
+    private static final Logger LOG = LogManager.getLogger(UserServlet.class);
     /**
      * Retrieves all of the Users
      * @param req Http request object
@@ -42,6 +45,7 @@ public class UserServlet extends HttpServlet {
 
         // Get the PrintWriter for the response. . .
         PrintWriter writer = resp.getWriter();
+        LOG.info("UserServlet.doGet() invoked by requester {}", session.getAttribute("username"));
 
         // Check functionality based on role_id. . .
         switch(role_id){
@@ -57,6 +61,7 @@ public class UserServlet extends HttpServlet {
                 ObjectMapper mapper = new ObjectMapper();
 
                 // For each User get JSON and send it back. . .
+                LOG.info("Retrieving all users");
                 for (User u : users) {
                     writer.print(mapper.writeValueAsString(u));
                 }
@@ -64,6 +69,7 @@ public class UserServlet extends HttpServlet {
 
             default:
                 // ANY OTHER role_id. . .
+                LOG.info("Retrieve all users failed");
                 resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
 
@@ -99,9 +105,11 @@ public class UserServlet extends HttpServlet {
             ServiceUtil.getUserService().register(newUser);
 
             // Http Code CREATED. . .
+            LOG.info("Created new user");
             resp.setStatus(HttpServletResponse.SC_CREATED);
         } else {
             // Not an ADMIN. . .
+            LOG.info("Failed to create new user");
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
 
@@ -147,11 +155,13 @@ public class UserServlet extends HttpServlet {
                     // Delete the specified id. . .
                     ServiceUtil.getUserService().deleteUserById(delete);
                     resp.setStatus(HttpServletResponse.SC_OK);
+                    LOG.info("Deleted user");
                 }
             }
         } else {
             // Not an ADMIN
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            LOG.info("Failed to delete user");
         }
 
     }
@@ -186,10 +196,12 @@ public class UserServlet extends HttpServlet {
 
             // Http Code OK
             resp.setStatus(HttpServletResponse.SC_OK);
+            LOG.info("Updated user");
         } else {
 
             // Not an ADMIN. . .
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            LOG.info("Failed to update user");
         }
     }
 }

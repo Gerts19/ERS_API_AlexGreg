@@ -5,6 +5,8 @@ import com.revature.dtos.ApproveDeny;
 import com.revature.models.Reimbursement;
 import com.revature.models.ReimbursementStatus;
 import com.revature.util.ServiceUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -27,6 +29,8 @@ import java.util.Set;
  */
 @WebServlet(name="Reimbursements", urlPatterns = "/reimbursements")
 public class ReimbursementsServlet extends HttpServlet {
+
+    private static final Logger LOG = LogManager.getLogger(ReimbursementsServlet.class);
 
     /**
      * Handles Employee and Finance Manager GET requests for Reimbursements
@@ -53,6 +57,7 @@ public class ReimbursementsServlet extends HttpServlet {
         // Set content type and encoding. . .
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
+        LOG.info("ReimbursementServlet.doGet() invoked by requester {}", session.getAttribute("username"));
 
         // Switch on role_id. . .
         switch (role_id) {
@@ -116,6 +121,7 @@ public class ReimbursementsServlet extends HttpServlet {
                 }
 
                 // For each Reimbursement, add the JSON to the response. . .
+                LOG.info("Returning reimbursements");
                 for (Reimbursement r : reimbursements) {
                     writer.print(mapper.writeValueAsString(r));
                 }
@@ -148,6 +154,7 @@ public class ReimbursementsServlet extends HttpServlet {
                     for (Reimbursement r : reimbursements) {
 
                         // If this matches, the User is the author (since each r comes from the List from User Id). . .
+                        LOG.info("Returning reimbursements");
                         if (reimbId == r.getId())
                             writer.print(mapper.writeValueAsString(r));
                     }
@@ -156,6 +163,7 @@ public class ReimbursementsServlet extends HttpServlet {
                 } else {
 
                     // For each reimbursement, map to JSON and add to response. . .
+                    LOG.info("Returning reimbursements");
                     for (Reimbursement r : reimbursements) {
                         writer.print(mapper.writeValueAsString(r));
                     }
@@ -199,12 +207,14 @@ public class ReimbursementsServlet extends HttpServlet {
             ServiceUtil.getReimbService().save(newReimb);
 
             // Http Code CREATED. . .
+            LOG.info("Created new reimbursement");
             resp.setStatus(HttpServletResponse.SC_CREATED);
 
         // Not an EMPLOYEE. . .
         } else {
 
             // Http Code FORBIDDEN. . .
+            LOG.info("Failed to create new reimbursement");
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
     }
@@ -253,12 +263,14 @@ public class ReimbursementsServlet extends HttpServlet {
                     ServiceUtil.getReimbService().updateEMP(updateReimb);
 
                     // Http Code OK. . .
+                    LOG.info("Updated reimbursement");
                     resp.setStatus(HttpServletResponse.SC_OK);
 
                 // Status is not PENDING. . .
                 } else {
 
                     // Http Code CONFLICT. . .
+                    LOG.info("Failed to update reimbursement");
                     resp.setStatus(HttpServletResponse.SC_CONFLICT);
                 }
                 break;
@@ -279,6 +291,7 @@ public class ReimbursementsServlet extends HttpServlet {
                     ServiceUtil.getReimbService().deny(userId, approveDeny.getId());
 
                     // Http Code OK
+                    LOG.info("Denied reimbursement");
                     resp.setStatus(HttpServletResponse.SC_OK);
 
                 // If .getStatus() == 1, approve. . .
@@ -288,10 +301,12 @@ public class ReimbursementsServlet extends HttpServlet {
                     ServiceUtil.getReimbService().approve(userId, approveDeny.getId());
 
                     // Http Code OK
+                    LOG.info("Approved reimbursement");
                     resp.setStatus(HttpServletResponse.SC_OK);
                 } else {
 
                     // Http Code CONFLICT (not a correct status for ApproveDeny). . .
+                    LOG.info("Failed to update status of reimbursement");
                     resp.setStatus(HttpServletResponse.SC_CONFLICT);
                 }
                 break;

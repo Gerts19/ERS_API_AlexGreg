@@ -9,6 +9,8 @@ import com.revature.repositories.UserRepository;
 import com.revature.services.ReimbursementService;
 import com.revature.services.UserService;
 import com.revature.util.ServiceUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
@@ -34,6 +36,8 @@ import java.util.Properties;
  */
 @WebServlet(name="Login",urlPatterns = "/login")
 public class LoginServlet extends HttpServlet {
+
+    private static final Logger LOG = LogManager.getLogger(LoginServlet.class);
 
 
     /**
@@ -73,11 +77,14 @@ public class LoginServlet extends HttpServlet {
 
             // HTTP Status = CREATED. . .
             resp.setStatus(HttpServletResponse.SC_CREATED);
+            LOG.info("Establishing a session for user, {}", user.getUsername());
 
 
         } else {
             // User failed login. . .
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            LOG.info("Login failed");
+
         }
     }
 
