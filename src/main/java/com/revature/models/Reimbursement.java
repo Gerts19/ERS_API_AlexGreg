@@ -1,5 +1,7 @@
 package com.revature.models;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import javax.persistence.*;
 import java.io.File;
 import java.sql.Timestamp;
@@ -21,9 +23,11 @@ public class Reimbursement {
     @Column(name="amount",nullable = false)
     private Double amount;
 
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "E, dd MMM yyyy HH:mm:ss")
     @Column(name="submitted",nullable = false)
     private Timestamp submitted;
 
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "E, dd MMM yyyy HH:mm:ss")
     @Column(name="resolved",nullable = true)
     private Timestamp resolved;
 

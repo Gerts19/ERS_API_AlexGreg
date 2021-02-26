@@ -30,7 +30,7 @@ import java.util.Set;
 @WebServlet(name="Reimbursements", urlPatterns = "/reimbursements")
 public class ReimbursementsServlet extends HttpServlet {
 
-    private static final Logger LOG = LogManager.getLogger(ReimbursementsServlet.class);
+    private static final Logger LOG = LogManager.getLogger(ReimbursementsServlet.class.getName());
 
     /**
      * Handles Employee and Finance Manager GET requests for Reimbursements
@@ -57,7 +57,8 @@ public class ReimbursementsServlet extends HttpServlet {
         // Set content type and encoding. . .
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
-        LOG.info("ReimbursementServlet.doGet() invoked by requester {}", session.getAttribute("username"));
+        String msg = "ReimbursementServlet.doGet() invoked by requester: " + session.getAttribute("username");
+        LOG.info(msg);
 
         // Switch on role_id. . .
         switch (role_id) {
@@ -107,7 +108,7 @@ public class ReimbursementsServlet extends HttpServlet {
 
                     // Filter by Type. . .
                     case "type":
-                        reimbursements = ServiceUtil.getReimbService().getReimbByStatus(type);
+                        reimbursements = ServiceUtil.getReimbService().getReimbByType(type);
                         break;
 
                     // Filter by single Reimbursement

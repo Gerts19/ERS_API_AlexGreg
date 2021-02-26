@@ -1,7 +1,7 @@
 package com.revature.servlets;
 
+import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.revature.models.Reimbursement;
 import com.revature.models.User;
 import com.revature.util.ServiceUtil;
 import org.apache.logging.log4j.LogManager;
@@ -27,7 +27,8 @@ import java.util.Set;
 public class UserServlet extends HttpServlet {
 
 
-    private static final Logger LOG = LogManager.getLogger(UserServlet.class);
+    private static final Logger LOG = LogManager.getLogger(UserServlet.class.getName());
+
     /**
      * Retrieves all of the Users
      * @param req Http request object
@@ -100,6 +101,12 @@ public class UserServlet extends HttpServlet {
 
             // Create a new User from the JSON. . .
             User newUser = new User(objectMapper.readValue(req.getInputStream(),User.class));
+
+            // Get a Hashed Password. . .
+            String bCryptHash = BCrypt.withDefaults().hashToString(12, newUser.getPassword().toCharArray());
+
+            // Set the password to Hashed Password. . .
+            newUser.setPassword(bCryptHash);
 
             // Using ServiceUtil to register the newUser. . .
             ServiceUtil.getUserService().register(newUser);
@@ -190,6 +197,12 @@ public class UserServlet extends HttpServlet {
 
             // Map a User from the JSON. . .
             User user = objectMapper.readValue(req.getInputStream(),User.class);
+
+            // Get a Hashed Password. . .
+            String bCryptHash = BCrypt.withDefaults().hashToString(12, user.getPassword().toCharArray());
+
+            // Set the password to Hashed Password. . .
+            user.setPassword(bCryptHash);
 
             // Update the User. . .
             ServiceUtil.getUserService().update(user);

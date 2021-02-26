@@ -9,6 +9,9 @@ import com.revature.repositories.ReimbursementsRepository;
 import com.revature.repositories.UserRepository;
 import com.revature.services.ReimbursementService;
 import com.revature.services.UserService;
+import com.revature.servlets.ReimbursementsServlet;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -22,22 +25,11 @@ import java.util.Optional;
 
 public class Driver {
 
+    private static final Logger LOG = LogManager.getLogger(Driver.class.getName());
+
   public static void main(String[] args) {
 
-
-      SessionFactory sF = new Configuration()
-                                .addAnnotatedClass(User.class)
-                                .addAnnotatedClass(Reimbursement.class).buildSessionFactory();
-
-      UserRepository userRepo = new UserRepository(sF);
-      UserService userServ = new UserService(userRepo);
-      ReimbursementsRepository rR = new ReimbursementsRepository(sF);
-      ReimbursementService rS = new ReimbursementService(rR);
-
-      Reimbursement reimbursement = new Reimbursement(123.45, "Big Test", 7, ReimbursementStatus.getByNumber(1),ReimbursementType.getByNumber(1));
-      reimbursement.setSubmitted(Timestamp.valueOf(LocalDateTime.now()));
-      rS.save(reimbursement);
-
+      LOG.error("Does this log?");
 
   }
 }
